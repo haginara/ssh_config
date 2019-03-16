@@ -20,34 +20,31 @@ from pyparsing import (
     indentedBlock,
 )
 
-SPACE = White().suppress()
-HOST = Literal("Host").suppress()
-KEY = Word(alphanums + "*._/")
-VALUE = Word(alphanums + "*._/")
-paramValueDef = SkipTo("#" | lineEnd)
-indentStack = [1]
+class SSHConfig:
+  SPACE = White().suppress()
+  HOST = Literal("Host").suppress()
+  KEY = Word(alphanums + "~*._-/")
+  VALUE = Word(alphanums + "~*._-/")
+  paramValueDef = SkipTo("#" | lineEnd)
+  indentStack = [1]
 
 
-paramDef = Forward()
-HostDecl = (HOST + SPACE + VALUE)
-block = indentedBlock(paramDef, indentStack)
-paramDef << Dict(Group(KEY + SPACE + VALUE))
-HostBlock = Dict(Group(HostDecl + block))
-parser = OneOrMore(HostBlock).ignore(pythonStyleComment)
+  paramDef = Forward()
+  HostDecl = (HOST + SPACE + VALUE)
+  block = indentedBlock(paramDef, indentStack)
+  paramDef << Dict(Group(KEY + SPACE + VALUE))
+  HostBlock = Dict(Group(HostDecl + block))
+  parser = OneOrMore(HostBlock).ignore(pythonStyleComment)
+
+  def __init__(self, host, config):
+    self.host = host
+    self.config = config
+  
+  @classmethod
+  def load(cls, config_path):
+    full_config_path = os.path.expanduser(config_path)
+    with open(full_config_path, 'r') as f:
+      parsed = SSHConfig.parser.parseString(f.read()).asDict()
+    return [ cls(host, parsed[host]) for host in parsed ]
 
 
-data = open(os.path.expanduser('~/.ssh/config'), 'r').read()
-sample = """
-Host server1
-  ServerAliveInterval 200
-  HostName 203.0.113.76
-Host * 
-  ExitOnForwardFailure yes
-  Protocol 2
-  ServerAliveInterval 400
-"""
-parsed = parser.parseString(data).asDict()
-for host in parsed:
-    print("Host: %s" % host)
-    for option in parsed[host]:
-        print("\t%s" % option)

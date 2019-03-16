@@ -1,0 +1,7 @@
+Host server1
+  ServerAliveInterval 200
+  HostName 203.0.113.76
+Host * 
+  ExitOnForwardFailure yes
+  Protocol 2
+  ServerAliveInterval 40
