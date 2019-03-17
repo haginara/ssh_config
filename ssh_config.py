@@ -25,23 +25,10 @@ from pyparsing import (
 
 logger = logging.getLogger(__name__)
 
-SPACE = White().suppress()
-HOST = Literal("Host").suppress()
-KEY = Word(alphanums + "~*._-/")
-VALUE = Word(alphanums + "~*._-/")
-paramValueDef = SkipTo("#" | lineEnd)
-indentStack = [1]
-
-HostDecl = HOST + SPACE + VALUE
-paramDef = Dict(Group(KEY + SPACE + paramValueDef))
-block = indentedBlock(paramDef, indentStack)
-HostBlock = Dict(Group(HostDecl + block))
-SSH_CONFIG_PARSER = OneOrMore(HostBlock).ignore(pythonStyleComment)
-
 
 class Host:
   attrs = [
-    ('Host', str),
+    ('HostName', str),
     ('Match',str),
     ('AddKeysToAgent',str),
     ('AddressFamily',str),
@@ -63,7 +50,12 @@ class Host:
   ]
   def __init__(self, name, attrs):
     self.name = name
-    self.__attrs = attrs
+    self.__attrs = dict()
+
+    for attr, attr_type in self.attrs:
+      if attrs.get(attr):
+        self.__attrs[attr] = attr_type(attrs.get(attr))
+
 
   @property
   def attributes(self):
@@ -83,10 +75,11 @@ class SSHConfig:
   def __init__(self, path):
     self.__path = path
     self.__hosts = []
+    self.raw = None
     with open(self.__path, 'r') as f:
-      data = f.read()
-    logger.debug("DATA: %s", data)
-    parsed = SSH_CONFIG_PARSER.parseString(data)
+      self.raw = f.read()
+    #logger.debug("DATA: %s", data)
+    parsed = self.parse(self.raw)
     for name, config in parsed.asDict().items():
       attrs = dict()
       for attr in config:
@@ -99,11 +92,51 @@ class SSHConfig:
     logger.debug('Load: %s' % full_config_path)
     return cls(full_config_path)
   
+
+  def parse(self, data):
+    SPACE = White().suppress()
+    HOST = Literal("Host").suppress()
+    KEY = Word(alphanums + "~*._-/")
+    VALUE = Word(alphanums + "~*._-/")
+    paramValueDef = SkipTo("#" | lineEnd)
+    indentStack = [1]
+
+    HostDecl = HOST + SPACE + VALUE
+    paramDef = Dict(Group(KEY + SPACE + paramValueDef))
+    block = indentedBlock(paramDef, indentStack)
+    HostBlock = Dict(Group(HostDecl + block))
+    return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(data)
+
   def __iter__(self):
     return self.__hosts.__iter__()
 
   def __next__(self):
     return self.__hosts.next()
+  
+  def __getitem__(self, idx):
+    return self.__hosts[idx]
+  
+  def get(self, name):
+    for host in self.__hosts:
+      if host.name == name:
+        return host
+    raise KeyError
+  
+  def append(self, host):
+    if not isinstance(host, Host):
+      raise TypeError
+    self.__hosts.append(host)
+  
+  def write(self, filename=""):
+    if filename:
+      self.__path = filename
+    with open(self.__path, 'w') as f:
+      for host in self.__hosts:
+        f.write('Host %s\n' % host.name)
+        for attr in host.attributes:
+          f.write('\t%s %s\n' % (attr, host.get(attr)))
+    return self.__path
+
 
 def main(argv):
   parser = argparse.ArgumentParser()
