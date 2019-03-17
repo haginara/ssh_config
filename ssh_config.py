@@ -76,24 +76,26 @@ class SSHConfig:
     self.__path = path
     self.__hosts = []
     self.raw = None
-    with open(self.__path, 'r') as f:
-      self.raw = f.read()
+
+  @classmethod
+  def load(cls, config_path):
+    logger.debug('Load: %s' % config_path)
+    ssh_config = cls(config_path)
+    
+    with open(config_path, 'r') as f:
+      ssh_config.raw = f.read()
     #logger.debug("DATA: %s", data)
-    parsed = self.parse(self.raw)
+    parsed = ssh_config.parse()
     for name, config in parsed.asDict().items():
       attrs = dict()
       for attr in config:
         attrs.update(attr)
-      self.__hosts.append(Host(name, attrs))
+      ssh_config.append(Host(name, attrs))
+    return ssh_config
   
-  @classmethod
-  def load(cls, config_path):
-    full_config_path = os.path.expanduser(config_path)
-    logger.debug('Load: %s' % full_config_path)
-    return cls(full_config_path)
-  
-
-  def parse(self, data):
+  def parse(self, data=""):
+    if data:
+      self.raw = data
     SPACE = White().suppress()
     HOST = Literal("Host").suppress()
     KEY = Word(alphanums + "~*._-/")
@@ -105,7 +107,7 @@ class SSHConfig:
     paramDef = Dict(Group(KEY + SPACE + paramValueDef))
     block = indentedBlock(paramDef, indentStack)
     HostBlock = Dict(Group(HostDecl + block))
-    return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(data)
+    return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
 
   def __iter__(self):
     return self.__hosts.__iter__()
@@ -134,7 +136,7 @@ class SSHConfig:
       for host in self.__hosts:
         f.write('Host %s\n' % host.name)
         for attr in host.attributes:
-          f.write('\t%s %s\n' % (attr, host.get(attr)))
+          f.write('    %s %s\n' % (attr, host.get(attr)))
     return self.__path
 
 
@@ -143,9 +145,18 @@ def main(argv):
   parser.add_argument('--config', default='~/.ssh/config')
 
   options, args = parser.parse_known_args(argv[1:])
-
-  hosts = SSHConfig.load(options.config)
-  for host in hosts:
+  options.config = os.path.expanduser(options.config)
+  if not os.path.exists(options.config):
+    answer = input("%s does not exists, Do you want to create new one[y/N]" % options.config)
+    if answer == 'y':
+      open(options.config, 'w').close()
+      print("Created!")
+    else:
+      return
+    config = SSHConfig(options.config)
+  else:
+    hosts = SSHConfig.load(options.config)
+    for host in hosts:
       print('Name: %s, Config: %s' %(host.name, host.attributes))
 
 

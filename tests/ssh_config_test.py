@@ -15,6 +15,10 @@ new_host = Host(
         "HostName": "203.0.113.77"
     })
 
+new_data = """Host server2
+    HostName 203.0.113.77
+    ServerAliveInterval 200
+"""
 
 class TestSSHConfig(unittest.TestCase):
     configs = SSHConfig.load(sample)
@@ -49,6 +53,14 @@ class TestSSHConfig(unittest.TestCase):
         new_config = SSHConfig.load(new_sample_path)
         os.remove(new_sample_path)
         self.assertEqual('server2', new_config.get('server2').name)
+    
+    def test_new(self):
+        empty_sample = os.path.join(os.path.dirname(__name__), 'sample_empty')
+        config = SSHConfig(empty_sample)
+        config.append(new_host)
+        config.write()
+        with open(empty_sample, 'r') as f:
+            self.assertEqual(new_data, f.read())
 
         
 
