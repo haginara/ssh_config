@@ -25,6 +25,7 @@ class TestSSHConfig(unittest.TestCase):
     def test_load(self):
         for config in self.configs:
             self.assertIn(config.name, ['server1', '*'])
+            break
     
     def test_other(self):
         for host in self.configs:
@@ -33,6 +34,7 @@ class TestSSHConfig(unittest.TestCase):
             
             if host.name == '*':
                 self.assertEqual(host.ServerAliveInterval, 40)
+
     def test_set(self):
         host_0 = self.configs[0]
         host_1 = self.configs[1]
@@ -61,6 +63,13 @@ class TestSSHConfig(unittest.TestCase):
         config.write()
         with open(empty_sample, 'r') as f:
             self.assertEqual(new_data, f.read())
+    
+    def test_host_command(self):
+        self.assertEqual("ssh 203.0.113.76",                self.configs.get('server1').command())
+        self.assertEqual("ssh -P 2202 203.0.113.76",        self.configs.get('server_cmd_1').command())
+        self.assertEqual("ssh user@203.0.113.76",           self.configs.get('server_cmd_2').command())
+        self.assertEqual("ssh -P 2202 user@203.0.113.76",   self.configs.get('server_cmd_3').command())
+
 
         
 

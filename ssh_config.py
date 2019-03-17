@@ -56,7 +56,6 @@ class Host:
       if attrs.get(attr):
         self.__attrs[attr] = attr_type(attrs.get(attr))
 
-
   @property
   def attributes(self):
     return self.__attrs
@@ -69,6 +68,24 @@ class Host:
   
   def set(self, key, value):
     return self.__attrs.set(key, value)
+  
+  def command(self, cmd='ssh'):
+    if self.Port and self.Port != 22:
+      port = '-P {port} '.format(port=self.Port)
+    else:
+      port = ''
+    
+    if self.User:
+      user = "%s@" % self.User
+    else:
+      user = ''
+
+    return "{cmd} {port}{username}{host}".format(
+      cmd=cmd,
+      port=port,
+      username=user,
+      host=self.HostName
+    )
 
 
 class SSHConfig:

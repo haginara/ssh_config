@@ -1,7 +1,22 @@
 Host server1
   ServerAliveInterval 200
   HostName 203.0.113.76
+
 Host * 
   ExitOnForwardFailure yes
   Protocol 2
   ServerAliveInterval 40
+
+Host server_cmd_1
+  HostName 203.0.113.76
+  Port 2202
+
+Host server_cmd_2
+  HostName 203.0.113.76
+  User user
+  Port 22
+
+Host server_cmd_3
+  HostName 203.0.113.76
+  User user
+  Port 2202
