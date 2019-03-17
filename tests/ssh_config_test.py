@@ -1,22 +1,26 @@
 import os
 import sys
+import logging
 import unittest
+logging.basicConfig(level=logging.DEBUG)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+import ssh_config
 
-from ssh_config import SSHConfig
+sample = os.path.join(os.path.dirname(__file__), 'sample')
 
 
 class TestSSHConfig(unittest.TestCase):
-    sample = os.path.join(
-                os.path.dirname(__file__),
-                'sample')
-    
     def test_load(self):
-        configs = SSHConfig.load(self.sample)
+        configs = ssh_config.SSHConfig.load(sample)
         for config in configs:
-            print(config.host, config.config)
-            self.assertIn(config.host, ['server1', '*'])
-
+            self.assertIn(config.name, ['server1', '*'])
+    
+    def test_other(self):
+        configs = ssh_config.SSHConfig.load(sample)
+        for config in configs:
+            self.assertIn(config.name, ['server1', '*'])
+    
+    
 
 if __name__ == '__main__':
     unittest.main()
