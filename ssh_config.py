@@ -38,6 +38,7 @@ block = indentedBlock(paramDef, indentStack)
 HostBlock = Dict(Group(HostDecl + block))
 SSH_CONFIG_PARSER = OneOrMore(HostBlock).ignore(pythonStyleComment)
 
+
 class Host:
   attrs = [
     ('Host', str),
@@ -76,7 +77,8 @@ class Host:
   
   def set(self, key, value):
     return self.__attrs.set(key, value)
-  
+
+
 class SSHConfig:
   def __init__(self, path):
     self.__path = path
