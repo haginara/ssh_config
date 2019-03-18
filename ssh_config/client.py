@@ -137,11 +137,16 @@ class SSHConfig:
     def __getitem__(self, idx):
         return self.__hosts[idx]
 
-    def get(self, name):
+    def hosts(self):
+        return self.__hosts
+
+    def get(self, name, raise_exception=True):
         for host in self.__hosts:
             if host.name == name:
                 return host
-        raise KeyError
+        if raise_exception:
+            raise KeyError
+        return None
 
     def append(self, host):
         if not isinstance(host, Host):
@@ -149,8 +154,11 @@ class SSHConfig:
         self.__hosts.append(host)
 
     def remove(self, name):
-        host = self.get(name)
-        self.__hosts.remove(host)
+        host = self.get(name, raise_exception=False)
+        if host:
+            self.__hosts.remove(host)
+            return True
+        return False
 
     def write(self, filename=""):
         if filename:

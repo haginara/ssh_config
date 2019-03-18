@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import abc
 import argparse
 from docopt import docopt
@@ -35,6 +36,7 @@ class DocOptDispather:
         ls          Show list of Hosts in client file
         add         Add new Host configuration
         rm          Remove exist Host configuration
+        import      Import Hosts from csv file to SSH Client config
         version     Show version information
     """
 
@@ -49,7 +51,11 @@ class DocOptDispather:
             raise SystemExit(self.__doc__)
 
         if not hasattr(self, command):
-            raise NoExistCommand(command, self)
+            if hasattr(self, "_%s" % command):
+                command = "_%s" % command
+            else:
+                raise NoExistCommand(command, self)
+            
         command_handler = getattr(self, command)
         command_docstring = inspect.getdoc(command_handler)
         command_options = docopt(command_docstring, options["ARGS"], options_first=True)
@@ -83,7 +89,8 @@ class DocOptDispather:
                 print(host.name)
             elif command_options.get("--verbose"):
                 print(host.name)
-                print(host.attributes)
+                for key, value in host.attributes.items():
+                    print("%s %s" % (key, value))
             else:
                 print("%s: %s" % (host.name, host.HostName))
 
@@ -93,6 +100,7 @@ class DocOptDispather:
         Usage: add [options] (HOSTNAME) (KEY=VAL...)
 
         Options:
+            -f --force      Force add
             -v --verbose    Verbose Output
             -h --help       Shwo this screen
         """
@@ -120,14 +128,12 @@ class DocOptDispather:
             hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
         )
         sshconfig.append(host)
-        for host in sshconfig:
-            print("Host %s" % host.name)
-            for key, value in host.attributes.items():
-                print("  %s %s" % (key, value))
-        
-        answer = input("Do you want to save it? [y/N]")
-        if answer == "y":
+        if command_options.get("--force"):
             sshconfig.write()
+        else:
+            answer = input("Do you want to save it? [y/N]")
+            if answer == "y":
+                sshconfig.write()
 
     def rm(self, options, command_options):
         """
@@ -136,7 +142,7 @@ class DocOptDispather:
 
         Options:
             -v --verbose    Verbose output
-            -f --force      Forcely remove given host
+            -f --force      Force remove given host
             -h --help       Show this screen
         """
         config = os.path.expanduser(options["--config"])
@@ -149,38 +155,75 @@ class DocOptDispather:
             print(e)
             return
         hostname = command_options.get("HOSTNAME")
-        if not hostname:
+        if not hostname or not sshconfig.get(hostname, raise_exception=False):
             print("No hostname")
             return
-        host = sshconfig.get(hostname)
-        answer = input("Do you want to remove %s? [y/N]" % host.name)
-        if answer == "y":
-            sshconfig.remove(hostname)
+        sshconfig.remove(hostname)
+        if command_options.get("--force"):
             sshconfig.write()
+        else:
+            answer = input("Do you want to remove %s? [y/N]" % hostname)
+            if answer == "y":
+                sshconfig.write()
+    
+    def _import(self, options, command_options):
+        """
+        Import hosts.
+        Usage: import [options] (FILE)
 
+        Options:
+            -v --verbose    Verbose output
+            -q --quiet      Quiet output
+            -f --force      Force import hosts
+            -h --help       Show this screen
+        """
+        config = os.path.expanduser(options["--config"])
+        if os.path.exists(config):
+            try:
+                sshconfig = SSHConfig.load(config)
+            except ssh_config.EmptySSHConfig as e:
+                sshconfig = SSHConfig(config)
+        else:
+            answer = input(
+                "%s does not exists, Do you want to create new one[y/N]" % config
+            )
+            if answer == "y":
+                open(config, "w").close()
+                print("Created!")
+            sshconfig = SSHConfig(config)
+           
+        queit = command_options.get("--quiet")
+        csv_file = command_options.get("FILE")
+        if not csv_file or not os.path.exists(csv_file):
+            print("No FILE")
+            return
+        with open(csv_file) as csvfile:
+            reader = csv.DictReader(csvfile)
+            if 'Name' not in reader.fieldnames:
+                print("No Name field")
+                return
+            for field in reader.fieldnames[1:]:
+                if field not in [attr[0] for attr in Host.attrs]:
+                    print("Unallowed attribute exist: %s" % field)
+                    return
+            for row in reader:
+                hostname = row.pop('Name')
+                host = Host(hostname, row)
+                sshconfig.append(host)
+                if not queit:
+                    print('Import: %s, %s' %(host.name, host.HostName))
+
+        if command_options.get("--force"):
+            sshconfig.write()
+        else:
+            answer = input("Do you want to save it? [y/N]")
+            if answer == "y":
+                sshconfig.write()
 
 def main(argv=sys.argv):
     dispatcher = DocOptDispather(
         argv[1:], options_first=True, version="ssh_config %s" % ssh_config.__version__
     )
-    """
-    options, args = parser.parse_known_args(argv[1:])
-    options.config = os.path.expanduser(options.config)
-
-    if not os.path.exists(options.config):
-        answer = input(
-            "%s does not exists, Do you want to create new one[y/N]" % options.config
-        )
-        if answer == "y":
-            open(options.config, "w").close()
-            print("Created!")
-        else:
-            return
-    config = SSHConfig(options.config)
-    hosts = SSHConfig.load(options.config)
-    for host in hosts:
-        print("Name: %s, Config: %s" % (host.name, host.attributes))
-    """
 
 
 if __name__ == "__main__":

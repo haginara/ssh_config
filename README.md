@@ -5,6 +5,12 @@ SSH Config
 
 SSH client config file manager
 
+Why
+---
+I don't remember all the servers I am managing. Also all servers requires all different configuration to connec to it. I know ~.ssh/config can handle this kind of issue. I want it to handle this file easier.
+
+Yes, I am not sure this is eaiser way to handle it. but I am trying.
+
 Usage
 -----
 ```
@@ -23,4 +29,19 @@ ssh_config.
         add         Add new Host configuration
         rm          Remove exist Host configuration
         version     Show version information
+```
+
+Use-cases
+---------
+
+# Want to get list of hosts in client file
+```
+$ ssh_config ls 
+# It shows name and HostName attribute
+server1: 203.0.113.76
+*: None
+server_cmd_1: 203.0.113.76
+server_cmd_2: 203.0.113.76
+server_cmd_3: 203.0.113.76
+
 ```
