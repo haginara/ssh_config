@@ -1,6 +1,6 @@
 import os
 import logging
-import subprocess # call
+import subprocess  # call
 from pyparsing import (
     Literal,
     White,
@@ -22,6 +22,9 @@ from pyparsing import (
 )
 
 logger = logging.getLogger(__name__)
+
+__version__ = ".".join(map(str, (0, 0, 1)))
+
 
 class EmptySSHConfig(Exception):
     def __init__(self, path):
@@ -147,7 +150,7 @@ class SSHConfig:
         if not isinstance(host, Host):
             raise TypeError
         self.__hosts.append(host)
-    
+
     def remove(self, name):
         host = self.get(name)
         self.__hosts.remove(host)
