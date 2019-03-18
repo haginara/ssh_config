@@ -21,7 +21,7 @@ class TestSSHConfig(unittest.TestCase):
     configs = SSHConfig.load(sample)
 
     def test_version(self):
-        self.assertEqual("0.0.2", __version__)
+        self.assertEqual("0.0.3", __version__)
 
     def test_load(self):
         for config in self.configs:
