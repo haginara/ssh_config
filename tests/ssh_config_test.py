@@ -50,28 +50,31 @@ class TestSSHConfig(unittest.TestCase):
     def test_write(self):
         configs = SSHConfig.load(sample)
         configs.append(new_host)
-        new_sample_path = os.path.join(os.path.dirname(__name__), 'sample_new')
+        new_sample_path = os.path.join(os.path.dirname(__file__), 'sample_new')
         configs.write(filename=new_sample_path)
         new_config = SSHConfig.load(new_sample_path)
         os.remove(new_sample_path)
         self.assertEqual('server2', new_config.get('server2').name)
     
     def test_new(self):
-        empty_sample = os.path.join(os.path.dirname(__name__), 'sample_empty')
+        empty_sample = os.path.join(os.path.dirname(__file__), 'sample_empty')
         config = SSHConfig(empty_sample)
         config.append(new_host)
         config.write()
         with open(empty_sample, 'r') as f:
             self.assertEqual(new_data, f.read())
+        os.remove(empty_sample)
     
+    def test_remove(self):
+        self.configs.remove("server1")
+        self.assertRaises(KeyError, self.configs.get, "server1")
+
     def test_host_command(self):
         self.assertEqual("ssh 203.0.113.76",                self.configs.get('server1').command())
         self.assertEqual("ssh -P 2202 203.0.113.76",        self.configs.get('server_cmd_1').command())
         self.assertEqual("ssh user@203.0.113.76",           self.configs.get('server_cmd_2').command())
         self.assertEqual("ssh -P 2202 user@203.0.113.76",   self.configs.get('server_cmd_3').command())
 
-
         
-
 if __name__ == '__main__':
     unittest.main()
