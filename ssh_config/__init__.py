@@ -4,7 +4,7 @@ from .client import (
     EmptySSHConfig,
 )
 
-__version__ = ".".join(map(str, (0, 0, 1)))
+__version__ = ".".join(map(str, (0, 0, 2)))
 
 __all__ = [
     EmptySSHConfig,

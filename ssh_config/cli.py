@@ -24,7 +24,7 @@ class DocOptDispather:
     """ssh_config.
 
     Usage:
-        ssh_config.py [options] [COMMAND] [ARGS...]
+        ssh_config [options] [COMMAND] [ARGS...]
         
     Options:
         -h --help           Show this screen.
