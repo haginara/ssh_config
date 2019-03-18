@@ -152,7 +152,7 @@ class DocOptDispather:
             sshconfig.write()
 
 
-def main(argv):
+def main(argv=sys.argv):
     dispatcher = DocOptDispather(
         argv[1:], options_first=True, version="ssh_config %s" % ssh_config.__version__
     )
@@ -177,4 +177,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
