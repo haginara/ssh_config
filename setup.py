@@ -17,7 +17,7 @@ setup(
     license="MIT License",
     url="https://github.com/haginara/ssh_config",
     long_description=long_description,
-    long_description_content_type='test/markdown',
+    long_description_content_type='text/markdown',
     version=__version__,
     author="Jonghak Choi",
     author_email="haginara@gmail.com",
