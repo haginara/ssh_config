@@ -88,13 +88,15 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO
 
-from contextlib import redirect_stdout
+from contextlib2 import redirect_stdout
 class TestSSHCli(unittest.TestCase):
     def test_cli(self):
         try:
-            console = cli.main(['ssh_config', '-v'])
-            output = sys.stdout.getline().strip()
-            self.assertEqual('ssh_config 0.0.3', output)
+            f = StringIO()
+            with redirect_stdout(f):
+                cli.main(['ssh_config', '-v'])
+            output = f.getline().strip()
+            self.assertEqual('ssh_config 0.0.4', output)
         except SystemExit:
             pass
     
@@ -115,16 +117,32 @@ class TestSSHCli(unittest.TestCase):
     
     def test_add(self):
         try:
-            f = StringIO()
-            with redirect_stdout(f):
-                cli.main(['ssh_config', '-f', sample, 'add', 'test_add', 'HostName=238.0.4.1', '-f'])
-            output = f.getvalue()
-            result = ("server1: 203.0.113.76\n"
-                    "*: None\n"
-                    "server_cmd_1: 203.0.113.76\n"
-                    "server_cmd_2: 203.0.113.76\n"
-                    "server_cmd_3: 203.0.113.76\n")
-            self.assertEqual(result, output)
+            sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
+            cli.main(['ssh_config', '-f', sample_add, 'add', '-f', 'test_add', 'HostName=238.0.4.1'])
+            sshconfig = SSHConfig.load(sample_add)
+            host = sshconfig.get('test_add', raise_exception=False)
+            self.assertIsNotNone(host)
+        except SystemExit:
+            pass
+
+    def test_rm(self):
+        try:
+            sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
+            cli.main(['ssh_config', '-f', sample_add, 'rm', '-f', 'test_add'])
+            sshconfig = SSHConfig.load(sample_add)
+            host = sshconfig.get('test_add', raise_exception=False)
+            self.assertIsNone(host)
+        except SystemExit:
+            pass
+        
+    def test_import(self):
+        try:
+            sample_import = os.path.join(os.path.dirname(__file__), "sample.import")
+            import_csv = os.path.join(os.path.dirname(__file__), "import.csv")
+            cli.main(['ssh_config', '-f', sample_import, 'import', import_csv])
+            sshconfig = SSHConfig.load(sample_import)
+            host = sshconfig.get('import1', raise_exception=False)
+            self.assertIsNone(host)
         except SystemExit:
             pass
 

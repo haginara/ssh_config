@@ -140,11 +140,13 @@ class SSHConfig:
     def hosts(self):
         return self.__hosts
 
-    def get(self, name):
+    def get(self, name, raise_exception=True):
         for host in self.__hosts:
             if host.name == name:
                 return host
-        raise KeyError
+        if raise_exception:
+            raise KeyError
+        return None
 
     def append(self, host):
         if not isinstance(host, Host):
