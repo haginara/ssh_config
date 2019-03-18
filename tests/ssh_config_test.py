@@ -3,7 +3,7 @@ import sys
 import logging
 import unittest
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host, __version__
 

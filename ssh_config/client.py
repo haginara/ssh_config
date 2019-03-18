@@ -28,7 +28,7 @@ class EmptySSHConfig(Exception):
         super().__init__("Empty SSH Config: %s" % path)
 
 
-class Host:
+class Host(object):
     attrs = [
         ("HostName", str),
         ("Match", str),
