@@ -15,9 +15,10 @@ setup(
     name="ssh_config",
     description="ssh client config manager",
     license="MIT License",
-    url="http://www.haginara.com",
+    url="https://github.com/haginara/ssh_config",
     long_description=long_description,
-    version=str('.'.join(map(str, __version__))),
+    long_description_content_type='test/markdown',
+    version=__version__,
     author="Jonghak Choi",
     author_email="haginara@gmail.com",
     entry_points={
@@ -27,13 +28,11 @@ setup(
     },
     packages=find_packages(),
     package_data={
-        '': ['*.txt', '*.md'],
+        '': ['README.md', 'LICENSE'],
     },
     include_package_data=True,
     classifiers=[
-        "Development Status :: 1 - Beta",
-        "Intended Audience :: Developers",
-        "Operating System :: OS Independent",
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
