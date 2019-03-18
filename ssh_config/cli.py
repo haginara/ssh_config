@@ -120,7 +120,6 @@ class DocOptDispather:
             hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
         )
         sshconfig.append(host)
-        print(sshconfig.hosts())
         for host in sshconfig:
             print("Host %s" % host.name)
             for key, value in host.attributes.items():
