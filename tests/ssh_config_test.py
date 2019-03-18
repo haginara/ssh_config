@@ -139,10 +139,13 @@ class TestSSHCli(unittest.TestCase):
         try:
             sample_import = os.path.join(os.path.dirname(__file__), "sample.import")
             import_csv = os.path.join(os.path.dirname(__file__), "import.csv")
-            cli.main(['ssh_config', '-f', sample_import, 'import', import_csv])
+            cli.main(['ssh_config', '-f', sample_import, 'import', '-q', '-f', import_csv])
             sshconfig = SSHConfig.load(sample_import)
-            host = sshconfig.get('import1', raise_exception=False)
-            self.assertIsNone(host)
+            import_1 = sshconfig.remove('import1')
+            import_2 = sshconfig.remove('import2')
+            sshconfig.write()
+            self.assertTrue(import_1)
+            self.assertTrue(import_2)
         except SystemExit:
             pass
 

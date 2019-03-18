@@ -154,8 +154,11 @@ class SSHConfig:
         self.__hosts.append(host)
 
     def remove(self, name):
-        host = self.get(name)
-        self.__hosts.remove(host)
+        host = self.get(name, raise_exception=False)
+        if host:
+            self.__hosts.remove(host)
+            return True
+        return False
 
     def write(self, filename=""):
         if filename:

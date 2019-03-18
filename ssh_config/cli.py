@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import abc
 import argparse
 from docopt import docopt
@@ -172,6 +173,7 @@ class DocOptDispather:
 
         Options:
             -v --verbose    Verbose output
+            -q --quiet      Quiet output
             -f --force      Force import hosts
             -h --help       Show this screen
         """
@@ -190,15 +192,27 @@ class DocOptDispather:
                 print("Created!")
             sshconfig = SSHConfig(config)
            
-        hostname = command_options.get("HOSTNAME")
-        if not hostname:
-            print("No hostname")
+        queit = command_options.get("--quiet")
+        csv_file = command_options.get("FILE")
+        if not csv_file or not os.path.exists(csv_file):
+            print("No FILE")
             return
-        attrs = command_options.get("KEY=VAL", [])
-        host = Host(
-            hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
-        )
-        sshconfig.append(host)
+        with open(csv_file) as csvfile:
+            reader = csv.DictReader(csvfile)
+            if 'Name' not in reader.fieldnames:
+                print("No Name field")
+                return
+            for field in reader.fieldnames[1:]:
+                if field not in [attr[0] for attr in Host.attrs]:
+                    print("Unallowed attribute exist: %s" % field)
+                    return
+            for row in reader:
+                hostname = row.pop('Name')
+                host = Host(hostname, row)
+                sshconfig.append(host)
+                if not queit:
+                    print('Import: %s, %s' %(host.name, host.HostName))
+
         if command_options.get("--force"):
             sshconfig.write()
         else:
