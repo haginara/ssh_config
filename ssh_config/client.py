@@ -23,9 +23,6 @@ from pyparsing import (
 
 logger = logging.getLogger(__name__)
 
-__version__ = ".".join(map(str, (0, 0, 1)))
-
-
 class EmptySSHConfig(Exception):
     def __init__(self, path):
         super().__init__("Empty SSH Config: %s" % path)

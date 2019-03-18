@@ -9,7 +9,7 @@ import pprint
 import inspect
 from functools import partial
 import ssh_config
-from ssh_config import SSHConfig, Host
+from .client import SSHConfig, Host
 
 
 class NoExistCommand(Exception):
