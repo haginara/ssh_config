@@ -137,6 +137,9 @@ class SSHConfig:
     def __getitem__(self, idx):
         return self.__hosts[idx]
 
+    def hosts(self):
+        return self.__hosts
+
     def get(self, name):
         for host in self.__hosts:
             if host.name == name:

@@ -6,7 +6,7 @@ import unittest
 logging.basicConfig(level=logging.INFO)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host, __version__
-
+from ssh_config import cli
 sample = os.path.join(os.path.dirname(__file__), "sample")
 
 new_host = Host("server2", {"ServerAliveInterval": 200, "HostName": "203.0.113.77"})
@@ -21,7 +21,7 @@ class TestSSHConfig(unittest.TestCase):
     configs = SSHConfig.load(sample)
 
     def test_version(self):
-        self.assertEqual("0.0.2", __version__)
+        self.assertEqual("0.0.3", __version__)
 
     def test_load(self):
         for config in self.configs:
@@ -81,6 +81,52 @@ class TestSSHConfig(unittest.TestCase):
         self.assertEqual(
             "ssh -P 2202 user@203.0.113.76", self.configs.get("server_cmd_3").command()
         )
+
+
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
+from contextlib import redirect_stdout
+class TestSSHCli(unittest.TestCase):
+    def test_cli(self):
+        try:
+            console = cli.main(['ssh_config', '-v'])
+            output = sys.stdout.getline().strip()
+            self.assertEqual('ssh_config 0.0.3', output)
+        except SystemExit:
+            pass
+    
+    def test_ls(self):
+        try:
+            f = StringIO()
+            with redirect_stdout(f):
+                cli.main(['ssh_config', '-f', sample, 'ls'])
+            output = f.getvalue()
+            result = ("server1: 203.0.113.76\n"
+                    "*: None\n"
+                    "server_cmd_1: 203.0.113.76\n"
+                    "server_cmd_2: 203.0.113.76\n"
+                    "server_cmd_3: 203.0.113.76\n")
+            self.assertEqual(result, output)
+        except SystemExit:
+            pass
+    
+    def test_add(self):
+        try:
+            f = StringIO()
+            with redirect_stdout(f):
+                cli.main(['ssh_config', '-f', sample, 'add', 'test_add', 'HostName=238.0.4.1', '-f'])
+            output = f.getvalue()
+            result = ("server1: 203.0.113.76\n"
+                    "*: None\n"
+                    "server_cmd_1: 203.0.113.76\n"
+                    "server_cmd_2: 203.0.113.76\n"
+                    "server_cmd_3: 203.0.113.76\n")
+            self.assertEqual(result, output)
+        except SystemExit:
+            pass
 
 
 if __name__ == "__main__":

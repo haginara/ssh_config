@@ -97,15 +97,20 @@ class DocOptDispather:
             -h --help       Shwo this screen
         """
         config = os.path.expanduser(options["--config"])
-        if not os.path.exists(config):
+        if os.path.exists(config):
+            try:
+                sshconfig = SSHConfig.load(config)
+            except ssh_config.EmptySSHConfig as e:
+                sshconfig = SSHConfig(config)
+        else:
             answer = input(
                 "%s does not exists, Do you want to create new one[y/N]" % config
             )
             if answer == "y":
                 open(config, "w").close()
                 print("Created!")
-
-        config = SSHConfig(config)
+            sshconfig = SSHConfig(config)
+           
         hostname = command_options.get("HOSTNAME")
         if not hostname:
             print("No hostname")
@@ -114,13 +119,16 @@ class DocOptDispather:
         host = Host(
             hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
         )
-        config.append(host)
-        print("Host %s" % host.name)
-        for key, value in host.attributes.items():
-            print("  %s %s" % (key, value))
+        sshconfig.append(host)
+        print(sshconfig.hosts())
+        for host in sshconfig:
+            print("Host %s" % host.name)
+            for key, value in host.attributes.items():
+                print("  %s %s" % (key, value))
+        
         answer = input("Do you want to save it? [y/N]")
         if answer == "y":
-            config.write()
+            sshconfig.write()
 
     def rm(self, options, command_options):
         """
