@@ -22,7 +22,7 @@ new_data = """Host server2
 class TestSSHConfig(unittest.TestCase):
 
     def test_version(self):
-        self.assertEqual("0.0.4", __version__)
+        self.assertEqual("0.0.6", __version__)
 
     def test_load(self):
         configs = SSHConfig.load(sample)
@@ -135,6 +135,23 @@ class TestSSHCli(unittest.TestCase):
         except SystemExit:
             pass
 
+    def test_ls_with_pattern(self):
+        expect = [
+            "server_cmd_1: 203.0.113.76",
+            "server_cmd_2: 203.0.113.76",
+            "server_cmd_3: 203.0.113.76",
+        ]
+        try:
+            f = StringIO()
+            with redirect_stdout(f):
+                cli.main(["ssh_config", "-f", sample, "ls", "server_*"])
+            output = f.getvalue()
+            for line in output.split("\n"):
+                if line:
+                    self.assertIn(line, expect)
+        except SystemExit:
+            pass
+
     def test_add(self):
         try:
             sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
@@ -178,6 +195,31 @@ class TestSSHCli(unittest.TestCase):
             host = sshconfig.get("server1", raise_exception=False)
             self.assertEqual("203.0.113.76", host.HostName)
             self.assertEqual("~/.ssh/id_rsa_test", host.IdentityFile)
+        except SystemExit:
+            pass
+        os.remove(new_sample)
+
+    def test_update_with_pattern(self):
+        try:
+            new_sample = os.path.join(os.path.dirname(__file__), "sample.update")
+            shutil.copy(sample, new_sample)
+            cli.main(
+                [
+                    "ssh_config",
+                    "-f",
+                    new_sample,
+                    "add",
+                    "-f",
+                    "-p",
+                    "server_*",
+                    "IdentityFile=~/.ssh/id_rsa_test",
+                ]
+            )
+            sshconfig = SSHConfig.load(new_sample)
+            for host in sshconfig:
+                if 'server_cmd' in host.name:
+                    self.assertEqual("203.0.113.76", host.HostName)
+                    self.assertEqual("~/.ssh/id_rsa_test", host.IdentityFile)
         except SystemExit:
             pass
         os.remove(new_sample)

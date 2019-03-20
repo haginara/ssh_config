@@ -8,6 +8,7 @@ from docopt import DocoptExit
 import logging
 import pprint
 import inspect
+import fnmatch
 from functools import partial
 import ssh_config
 from .client import SSHConfig, Host
@@ -88,7 +89,7 @@ class DocOptDispather:
         """
         List hosts.
 
-        usage: ls [options]
+        usage: ls [options] [PATTERN]
 
         Options:
             -q --quiet      Only display Names
@@ -100,15 +101,15 @@ class DocOptDispather:
             print("No config exist: %s" % options.get("--config"))
             return
 
+        pattern = command_options.get("PATTERN", None)
         for host in sshconfig:
-            if command_options.get("--quiet"):
-                print(host.name)
-            elif command_options.get("--verbose"):
-                print(host.name)
-                for key, value in host.attributes.items():
-                    print("%s %s" % (key, value))
-            else:
-                print("%s: %s" % (host.name, host.HostName))
+            if pattern is None or fnmatch.fnmatch(host.name, pattern):
+                if command_options.get("--quiet"):
+                    print(host.name)
+                elif command_options.get("--verbose"):
+                    print(host)
+                else:
+                    print("%s: %s" % (host.name, host.HostName))
 
     def add(self, options, command_options):
         """
@@ -125,17 +126,28 @@ class DocOptDispather:
         sshconfig = self.get_sshconfig(options.get("--config"))
         hostname = command_options.get("HOSTNAME")
         attrs = command_options.get("KEY=VAL", [])
-        host = sshconfig.get(hostname, raise_exception=False)
-        if host and command_options.get("--update"):
-            sshconfig.update(hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
-        elif host is None:
-            host = Host(
-                hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
-            )
-            sshconfig.append(host)
+        use_pattern = command_options.get("--use-pattern")
+        if use_pattern:
+            """ use-pattern is only accept update, not add """
+            hosts = [host for host in sshconfig if fnmatch.fnmatch(host.name, hostname)]
+            if hosts:
+                for host in hosts:
+                    sshconfig.update(host.name, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
+            else:
+                print("No hosts found")
+                return
         else:
-            print("%s host alread exist" % hostname)
-            return
+            host = sshconfig.get(hostname, raise_exception=False)
+            if host and command_options.get("--update"):
+                sshconfig.update(hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
+            elif host is None:
+                host = Host(
+                    hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
+                )
+                sshconfig.append(host)
+            else:
+                print("%s host alread exist" % hostname)
+                return
 
         if command_options.get("--force"):
             sshconfig.write()
