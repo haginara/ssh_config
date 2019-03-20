@@ -13,6 +13,9 @@ from functools import partial
 import ssh_config
 from .client import SSHConfig, Host
 
+if sys.version_info[0] < 3:
+    input = raw_input
+
 
 def input_is_yes(msg, default="n"):
     if default not in ["y", "n"]:
@@ -21,8 +24,6 @@ def input_is_yes(msg, default="n"):
         msg += " [yN]? "
     else:
         msg += " [Yn]? "
-    if sys.version_info[0] < 3:
-        input = raw_input
     answer = input(msg)
     if len(answer) > 1 and answer[0].upper() == "Y":
         return True
