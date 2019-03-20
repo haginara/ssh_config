@@ -5,6 +5,11 @@ SSH Config
 
 SSH client config file manager
 
+
+What is ssh_config?
+-------------------
+https://linux.die.net/man/5/ssh_config
+
 Why
 ---
 I don't remember all the servers I am managing. Also all servers requires all different configuration to connec to it. I know ~.ssh/config can handle this kind of issue. I want it to handle this file easier.
