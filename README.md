@@ -1,7 +1,7 @@
 SSH Config
 ==========
 [![PyPI version](https://badge.fury.io/py/ssh-config.svg)](https://badge.fury.io/py/ssh-config)
-[![Build Status](https://travis-ci.org/haginara/ssh-config.svg?branch=master)](https://travis-ci.org/haginara/ssh-config)
+[![Build Status](https://travis-ci.org/haginara/ssh_config.svg?branch=master)](https://travis-ci.org/haginara/ssh_config)
 
 SSH client config file manager
 
