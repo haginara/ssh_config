@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import logging
 import unittest
 
@@ -19,18 +20,19 @@ new_data = """Host server2
 
 
 class TestSSHConfig(unittest.TestCase):
-    configs = SSHConfig.load(sample)
 
     def test_version(self):
         self.assertEqual("0.0.4", __version__)
 
     def test_load(self):
-        for config in self.configs:
+        configs = SSHConfig.load(sample)
+        for config in configs:
             self.assertIn(config.name, ["server1", "*"])
             break
 
     def test_other(self):
-        for host in self.configs:
+        configs = SSHConfig.load(sample)
+        for host in configs:
             if host.name == "server1":
                 self.assertEqual(host.HostName, "203.0.113.76")
 
@@ -38,16 +40,25 @@ class TestSSHConfig(unittest.TestCase):
                 self.assertEqual(host.ServerAliveInterval, 40)
 
     def test_set(self):
-        host_0 = self.configs[0]
-        host_1 = self.configs[1]
+        configs = SSHConfig.load(sample)
+        host_0 = configs[0]
+        host_1 = configs[1]
 
     def test_get_host(self):
-        self.assertEqual("server1", self.configs.get("server1").name)
-        self.assertRaises(KeyError, self.configs.get, "NoExist")
+        configs = SSHConfig.load(sample)
+        self.assertEqual("server1", configs.get("server1").name)
+        self.assertRaises(KeyError, configs.get, "NoExist")
 
     def test_set_host(self):
-        self.configs.append(new_host)
-        self.assertEqual(new_host, self.configs[-1])
+        configs = SSHConfig.load(sample)
+        configs.append(new_host)
+        self.assertEqual(new_host, configs[-1])
+
+    def test_update(self):
+        configs = SSHConfig.load(sample)
+        configs.update("server1", {"IdentityFile": "~/.ssh/id_rsa_new"})
+        self.assertRaises(AttributeError, configs.update, "server1", [])
+        self.assertEqual(configs.get("server1").IdentityFile, "~/.ssh/id_rsa_new")
 
     def test_write(self):
         configs = SSHConfig.load(sample)
@@ -68,19 +79,21 @@ class TestSSHConfig(unittest.TestCase):
         os.remove(empty_sample)
 
     def test_remove(self):
-        self.configs.remove("server1")
-        self.assertRaises(KeyError, self.configs.get, "server1")
+        configs = SSHConfig.load(sample)
+        configs.remove("server1")
+        self.assertRaises(KeyError, configs.get, "server1")
 
     def test_host_command(self):
-        self.assertEqual("ssh 203.0.113.76", self.configs.get("server1").command())
+        configs = SSHConfig.load(sample)
+        self.assertEqual("ssh 203.0.113.76", configs.get("server1").command())
         self.assertEqual(
-            "ssh -P 2202 203.0.113.76", self.configs.get("server_cmd_1").command()
+            "ssh -p 2202 203.0.113.76", configs.get("server_cmd_1").command()
         )
         self.assertEqual(
-            "ssh user@203.0.113.76", self.configs.get("server_cmd_2").command()
+            "ssh user@203.0.113.76", configs.get("server_cmd_2").command()
         )
         self.assertEqual(
-            "ssh -P 2202 user@203.0.113.76", self.configs.get("server_cmd_3").command()
+            "ssh -p 2202 user@203.0.113.76", configs.get("server_cmd_3").command()
         )
 
 
@@ -125,6 +138,7 @@ class TestSSHCli(unittest.TestCase):
     def test_add(self):
         try:
             sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
+            shutil.copy(sample, sample_add)
             cli.main(
                 [
                     "ssh_config",
@@ -139,27 +153,56 @@ class TestSSHCli(unittest.TestCase):
             sshconfig = SSHConfig.load(sample_add)
             host = sshconfig.get("test_add", raise_exception=False)
             self.assertIsNotNone(host)
+            self.assertEqual(host.HostName, "238.0.4.1")
         except SystemExit:
             pass
+        os.remove(sample_add)
+
+    def test_update(self):
+        try:
+            new_sample = os.path.join(os.path.dirname(__file__), "sample.update")
+            shutil.copy(sample, new_sample)
+            cli.main(
+                [
+                    "ssh_config",
+                    "-f",
+                    new_sample,
+                    "add",
+                    "--update",
+                    "-f",
+                    "server1",
+                    "IdentityFile=~/.ssh/id_rsa_test",
+                ]
+            )
+            sshconfig = SSHConfig.load(new_sample)
+            host = sshconfig.get("server1", raise_exception=False)
+            self.assertEqual("203.0.113.76", host.HostName)
+            self.assertEqual("~/.ssh/id_rsa_test", host.IdentityFile)
+        except SystemExit:
+            pass
+        os.remove(new_sample)
 
     def test_rm(self):
         try:
-            sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
-            cli.main(["ssh_config", "-f", sample_add, "rm", "-f", "test_add"])
-            sshconfig = SSHConfig.load(sample_add)
+            new_sample = os.path.join(os.path.dirname(__file__), "sample.rm")
+            shutil.copy(sample, new_sample)
+            cli.main(["ssh_config", "-f", new_sample, "rm", "-f", "test_add"])
+            sshconfig = SSHConfig.load(new_sample)
             host = sshconfig.get("test_add", raise_exception=False)
             self.assertIsNone(host)
         except SystemExit:
             pass
+        os.remove(new_sample)
 
     def test_import(self):
         try:
-            sample_import = os.path.join(os.path.dirname(__file__), "sample.import")
+            new_sample = os.path.join(os.path.dirname(__file__), "sample.import")
+            shutil.copy(sample, new_sample)
             import_csv = os.path.join(os.path.dirname(__file__), "import.csv")
             cli.main(
-                ["ssh_config", "-f", sample_import, "import", "-q", "-f", import_csv]
+                ["ssh_config", "-f", new_sample, "import", "-q", "-f", import_csv]
             )
-            sshconfig = SSHConfig.load(sample_import)
+            sshconfig = SSHConfig.load(new_sample)
             import_1 = sshconfig.remove("import1")
             import_2 = sshconfig.remove("import2")
             sshconfig.write()
@@ -167,6 +210,7 @@ class TestSSHCli(unittest.TestCase):
             self.assertTrue(import_2)
         except SystemExit:
             pass
+        os.remove(new_sample)
 
 
 if __name__ == "__main__":

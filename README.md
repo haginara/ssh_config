@@ -28,6 +28,7 @@ ssh_config.
         ls          Show list of Hosts in client file
         add         Add new Host configuration
         rm          Remove exist Host configuration
+        import      Import Hosts from csv file to SSH Client config
         version     Show version information
 ```
 

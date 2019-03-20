@@ -35,8 +35,10 @@ class DocOptDispather:
     Commands:
         ls          Show list of Hosts in client file
         add         Add new Host configuration
+        update      UPdate Host configuration
         rm          Remove exist Host configuration
         import      Import Hosts from csv file to SSH Client config
+        host        Get Host information
         version     Show version information
     """
 
@@ -62,6 +64,25 @@ class DocOptDispather:
 
         # options, command_handler, command_options
         command_handler(options, command_options)
+    
+    def get_sshconfig(self, configpath, create=True):
+        sshconfig = None
+        config = os.path.expanduser(configpath)
+        if os.path.exists(config):
+            try:
+                sshconfig = SSHConfig.load(config)
+            except ssh_config.EmptySSHConfig as e:
+                sshconfig = SSHConfig(config)
+        elif create:
+            answer = input(
+                "%s does not exists, Do you want to create new one[y/N]" % config
+            )
+            if answer == "y":
+                open(config, "w").close()
+                print("Created!")
+            sshconfig = SSHConfig(config)
+        return sshconfig
+           
 
     def ls(self, options, command_options):
         """
@@ -74,17 +95,12 @@ class DocOptDispather:
             -v --verbose    Verbose output
             -h --help       Show this screen
         """
-        config = os.path.expanduser(options["--config"])
-        if not os.path.exists(config):
-            print("No config exist: %s" % config)
-            return
-        try:
-            hosts = SSHConfig.load(config)
-        except ssh_config.EmptySSHConfig as e:
-            print(e)
+        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
+        if sshconfig is None:
+            print("No config exist: %s" % options.get("--config"))
             return
 
-        for host in hosts:
+        for host in sshconfig:
             if command_options.get("--quiet"):
                 print(host.name)
             elif command_options.get("--verbose"):
@@ -100,34 +116,27 @@ class DocOptDispather:
         Usage: add [options] (HOSTNAME) (KEY=VAL...)
 
         Options:
-            -f --force      Force add
-            -v --verbose    Verbose Output
-            -h --help       Shwo this screen
+            --update            If host exists, update it.
+            -p --use-pattern    Use pattern to find hosts
+            -f --force          Force add
+            -v --verbose        Verbose Output
+            -h --help           Shwo this screen
         """
-        config = os.path.expanduser(options["--config"])
-        if os.path.exists(config):
-            try:
-                sshconfig = SSHConfig.load(config)
-            except ssh_config.EmptySSHConfig as e:
-                sshconfig = SSHConfig(config)
-        else:
-            answer = input(
-                "%s does not exists, Do you want to create new one[y/N]" % config
-            )
-            if answer == "y":
-                open(config, "w").close()
-                print("Created!")
-            sshconfig = SSHConfig(config)
-           
+        sshconfig = self.get_sshconfig(options.get("--config"))
         hostname = command_options.get("HOSTNAME")
-        if not hostname:
-            print("No hostname")
-            return
         attrs = command_options.get("KEY=VAL", [])
-        host = Host(
-            hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
-        )
-        sshconfig.append(host)
+        host = sshconfig.get(hostname, raise_exception=False)
+        if host and command_options.get("--update"):
+            sshconfig.update(hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
+        elif host is None:
+            host = Host(
+                hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
+            )
+            sshconfig.append(host)
+        else:
+            print("%s host alread exist" % hostname)
+            return
+
         if command_options.get("--force"):
             sshconfig.write()
         else:
@@ -145,15 +154,7 @@ class DocOptDispather:
             -f --force      Force remove given host
             -h --help       Show this screen
         """
-        config = os.path.expanduser(options["--config"])
-        if not os.path.exists(config):
-            print("No config exist: %s" % config)
-            return
-        try:
-            sshconfig = SSHConfig.load(config)
-        except ssh_config.EmptySSHConfig as e:
-            print(e)
-            return
+        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
         hostname = command_options.get("HOSTNAME")
         if not hostname or not sshconfig.get(hostname, raise_exception=False):
             print("No hostname")
@@ -177,21 +178,7 @@ class DocOptDispather:
             -f --force      Force import hosts
             -h --help       Show this screen
         """
-        config = os.path.expanduser(options["--config"])
-        if os.path.exists(config):
-            try:
-                sshconfig = SSHConfig.load(config)
-            except ssh_config.EmptySSHConfig as e:
-                sshconfig = SSHConfig(config)
-        else:
-            answer = input(
-                "%s does not exists, Do you want to create new one[y/N]" % config
-            )
-            if answer == "y":
-                open(config, "w").close()
-                print("Created!")
-            sshconfig = SSHConfig(config)
-           
+        sshconfig = self.get_sshconfig(options.get("--config"), create=True)
         queit = command_options.get("--quiet")
         csv_file = command_options.get("FILE")
         if not csv_file or not os.path.exists(csv_file):
@@ -219,6 +206,7 @@ class DocOptDispather:
             answer = input("Do you want to save it? [y/N]")
             if answer == "y":
                 sshconfig.write()
+
 
 def main(argv=sys.argv):
     dispatcher = DocOptDispather(

@@ -62,9 +62,21 @@ class Host(object):
     @property
     def attributes(self):
         return self.__attrs
+    
+    def __str__(self):
+        data = "Host %s\n" % self.name
+        for key, value in self.attributes.items():
+            data += "    %s %s\n" % (key, value)
+        return data
 
     def __getattr__(self, key):
         return self.__attrs.get(key)
+
+    def update(self, attrs):
+        if isinstance(attrs, dict):
+            self.__attrs.update(attrs)
+            return self
+        raise AttributeError
 
     def get(self, key, default=None):
         return self.__attrs.get(key, default)
@@ -74,7 +86,7 @@ class Host(object):
 
     def command(self, cmd="ssh"):
         if self.Port and self.Port != 22:
-            port = "-P {port} ".format(port=self.Port)
+            port = "-p {port} ".format(port=self.Port)
         else:
             port = ""
 
@@ -88,7 +100,7 @@ class Host(object):
         )
 
 
-class SSHConfig:
+class SSHConfig(object):
     def __init__(self, path):
         self.__path = path
         self.__hosts = []
@@ -139,6 +151,12 @@ class SSHConfig:
 
     def hosts(self):
         return self.__hosts
+
+    def update(self, name, attrs):
+        for idx, host in enumerate(self.__hosts):
+            if name == host.name:
+                host.update(attrs)
+                self.__hosts[idx] = host 
 
     def get(self, name, raise_exception=True):
         for host in self.__hosts:
