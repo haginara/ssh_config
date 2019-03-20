@@ -23,6 +23,7 @@ from pyparsing import (
 
 logger = logging.getLogger(__name__)
 
+
 class EmptySSHConfig(Exception):
     def __init__(self, path):
         super().__init__("Empty SSH Config: %s" % path)
@@ -62,7 +63,7 @@ class Host(object):
     @property
     def attributes(self):
         return self.__attrs
-    
+
     def __str__(self):
         data = "Host %s\n" % self.name
         for key, value in self.attributes.items():
@@ -156,7 +157,7 @@ class SSHConfig(object):
         for idx, host in enumerate(self.__hosts):
             if name == host.name:
                 host.update(attrs)
-                self.__hosts[idx] = host 
+                self.__hosts[idx] = host
 
     def get(self, name, raise_exception=True):
         for host in self.__hosts:

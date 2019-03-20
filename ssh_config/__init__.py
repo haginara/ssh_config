@@ -1,13 +1,5 @@
-from .client import (
-    SSHConfig,
-    Host,
-    EmptySSHConfig,
-)
+from .client import SSHConfig, Host, EmptySSHConfig
 
 __version__ = ".".join(map(str, (0, 0, 6)))
 
-__all__ = [
-    EmptySSHConfig,
-    SSHConfig,
-    Host
-]
+__all__ = [EmptySSHConfig, SSHConfig, Host]

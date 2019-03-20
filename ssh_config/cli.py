@@ -14,6 +14,21 @@ import ssh_config
 from .client import SSHConfig, Host
 
 
+def input_is_yes(msg, default="n"):
+    if default not in ["y", "n"]:
+        raise Exception("Only accept 'y' or 'n'")
+    if default is "n":
+        msg += " [yN]? "
+    else:
+        msg += " [Yn]? "
+    if sys.version_info[0] < 3:
+        input = raw_input
+    answer = input(msg)
+    if len(answer) > 1 and answer[0].upper() == "Y":
+        return True
+    return False
+
+
 class NoExistCommand(Exception):
     def __init__(self, command, supercommand):
         super().__init__("No Exist Command: %s" % command)
@@ -58,14 +73,14 @@ class DocOptDispather:
                 command = "_%s" % command
             else:
                 raise NoExistCommand(command, self)
-            
+
         command_handler = getattr(self, command)
         command_docstring = inspect.getdoc(command_handler)
         command_options = docopt(command_docstring, options["ARGS"], options_first=True)
 
         # options, command_handler, command_options
         command_handler(options, command_options)
-    
+
     def get_sshconfig(self, configpath, create=True):
         sshconfig = None
         config = os.path.expanduser(configpath)
@@ -75,15 +90,15 @@ class DocOptDispather:
             except ssh_config.EmptySSHConfig as e:
                 sshconfig = SSHConfig(config)
         elif create:
-            answer = input(
-                "%s does not exists, Do you want to create new one[y/N]" % config
+            answer = input_is_yes(
+                "%s does not exists, Do you want to create new one" % config,
+                default="n",
             )
-            if answer == "y":
+            if answer:
                 open(config, "w").close()
                 print("Created!")
             sshconfig = SSHConfig(config)
         return sshconfig
-           
 
     def ls(self, options, command_options):
         """
@@ -119,7 +134,7 @@ class DocOptDispather:
         Options:
             --update            If host exists, update it.
             -p --use-pattern    Use pattern to find hosts
-            -f --force          Force add
+            -y --yes            Force answer yes
             -v --verbose        Verbose Output
             -h --help           Shwo this screen
         """
@@ -132,14 +147,19 @@ class DocOptDispather:
             hosts = [host for host in sshconfig if fnmatch.fnmatch(host.name, hostname)]
             if hosts:
                 for host in hosts:
-                    sshconfig.update(host.name, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
+                    sshconfig.update(
+                        host.name,
+                        {attr.split("=")[0]: attr.split("=")[1] for attr in attrs},
+                    )
             else:
                 print("No hosts found")
                 return
         else:
             host = sshconfig.get(hostname, raise_exception=False)
             if host and command_options.get("--update"):
-                sshconfig.update(hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs})
+                sshconfig.update(
+                    hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
+                )
             elif host is None:
                 host = Host(
                     hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
@@ -149,10 +169,10 @@ class DocOptDispather:
                 print("%s host alread exist" % hostname)
                 return
 
-        if command_options.get("--force"):
+        if command_options.get("--yes"):
             sshconfig.write()
         else:
-            answer = input("Do you want to save it? [y/N]")
+            answer = input_is_yes("Do you want to save it", default="n")
             if answer == "y":
                 sshconfig.write()
 
@@ -163,7 +183,7 @@ class DocOptDispather:
 
         Options:
             -v --verbose    Verbose output
-            -f --force      Force remove given host
+            -y --yes        Force answer yes
             -h --help       Show this screen
         """
         sshconfig = self.get_sshconfig(options.get("--config"), create=False)
@@ -172,13 +192,13 @@ class DocOptDispather:
             print("No hostname")
             return
         sshconfig.remove(hostname)
-        if command_options.get("--force"):
+        if command_options.get("--yes"):
             sshconfig.write()
         else:
-            answer = input("Do you want to remove %s? [y/N]" % hostname)
+            answer = input_is_yes("Do you want to remove %s" % hostname, dfault="n")
             if answer == "y":
                 sshconfig.write()
-    
+
     def _import(self, options, command_options):
         """
         Import hosts.
@@ -187,7 +207,7 @@ class DocOptDispather:
         Options:
             -v --verbose    Verbose output
             -q --quiet      Quiet output
-            -f --force      Force import hosts
+            -y --yes        Force answer yes
             -h --help       Show this screen
         """
         sshconfig = self.get_sshconfig(options.get("--config"), create=True)
@@ -198,7 +218,7 @@ class DocOptDispather:
             return
         with open(csv_file) as csvfile:
             reader = csv.DictReader(csvfile)
-            if 'Name' not in reader.fieldnames:
+            if "Name" not in reader.fieldnames:
                 print("No Name field")
                 return
             for field in reader.fieldnames[1:]:
@@ -206,16 +226,16 @@ class DocOptDispather:
                     print("Unallowed attribute exist: %s" % field)
                     return
             for row in reader:
-                hostname = row.pop('Name')
+                hostname = row.pop("Name")
                 host = Host(hostname, row)
                 sshconfig.append(host)
                 if not queit:
-                    print('Import: %s, %s' %(host.name, host.HostName))
+                    print("Import: %s, %s" % (host.name, host.HostName))
 
-        if command_options.get("--force"):
+        if command_options.get("--yes"):
             sshconfig.write()
         else:
-            answer = input("Do you want to save it? [y/N]")
+            answer = input_is_yes("Do you want to save it", default="n")
             if answer == "y":
                 sshconfig.write()
 
