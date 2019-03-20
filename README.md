@@ -35,7 +35,7 @@ ssh_config.
 Use-cases
 ---------
 
-# Want to get list of hosts in client file
+#### List hosts
 ```
 $ ssh_config ls 
 # It shows name and HostName attribute
@@ -44,4 +44,35 @@ server1: 203.0.113.76
 server_cmd_1: 203.0.113.76
 server_cmd_2: 203.0.113.76
 server_cmd_3: 203.0.113.76
+```
+
+##### Add host
+```
+$ ssh_config add "server_cmd_4" HostName=203.0.113.77 IdentityFile="~/.ssh/cmd_id_rsa"
+```
+
+##### Update host
+```
+$ ssh_config add --update -p "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
+```
+
+##### Remove host
+```
+$ ssh_config rm "server_3" 
+```
+
+### Using pattern to get list or update exist hosts
+
+##### List hosts with pattern
+```
+$ ssh_config ls "server_*"
+# It shows name and HostName attribute
+server_cmd_1: 203.0.113.76
+server_cmd_2: 203.0.113.76
+server_cmd_3: 203.0.113.76
+```
+
+##### Update hosts with pattern
+```
+$ ssh_config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
 ```
