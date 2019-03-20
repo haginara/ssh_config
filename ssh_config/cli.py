@@ -169,12 +169,8 @@ class DocOptDispather:
                 print("%s host alread exist" % hostname)
                 return
 
-        if command_options.get("--yes"):
+        if command_options.get("--yes") or input_is_yes("Do you want to save it", default="n"):
             sshconfig.write()
-        else:
-            answer = input_is_yes("Do you want to save it", default="n")
-            if answer == "y":
-                sshconfig.write()
 
     def rm(self, options, command_options):
         """
@@ -192,12 +188,8 @@ class DocOptDispather:
             print("No hostname")
             return
         sshconfig.remove(hostname)
-        if command_options.get("--yes"):
+        if command_options.get("--yes") or input_is_yes("Do you want to remove %s" % hostname, dfault="n"):
             sshconfig.write()
-        else:
-            answer = input_is_yes("Do you want to remove %s" % hostname, dfault="n")
-            if answer == "y":
-                sshconfig.write()
 
     def _import(self, options, command_options):
         """
@@ -232,12 +224,8 @@ class DocOptDispather:
                 if not queit:
                     print("Import: %s, %s" % (host.name, host.HostName))
 
-        if command_options.get("--yes"):
+        if command_options.get("--yes") or input_is_yes("Do you want to save it", default="n"):
             sshconfig.write()
-        else:
-            answer = input_is_yes("Do you want to save it", default="n")
-            if answer == "y":
-                sshconfig.write()
 
 
 def main(argv=sys.argv):
