@@ -3,12 +3,19 @@ import sys
 import shutil
 import logging
 import unittest
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
-logging.basicConfig(level=logging.INFO)
+import docopt
+from contextlib2 import redirect_stdout
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host, __version__
 from ssh_config import cli
 
+logging.basicConfig(level=logging.INFO)
 sample = os.path.join(os.path.dirname(__file__), "sample")
 
 new_host = Host("server2", {"ServerAliveInterval": 200, "HostName": "203.0.113.77"})
@@ -94,14 +101,6 @@ class TestSSHConfig(unittest.TestCase):
         )
 
 
-if sys.version_info[0] < 3:
-    from StringIO import StringIO
-else:
-    from io import StringIO
-
-from contextlib2 import redirect_stdout
-
-
 class TestSSHCli(unittest.TestCase):
     def test_cli(self):
         f = StringIO()
@@ -142,6 +141,11 @@ class TestSSHCli(unittest.TestCase):
         for line in output.split("\n"):
             if line:
                 self.assertIn(line, expect)
+
+    def test_add_error(self):
+        self.assertRaises(
+            docopt.DocoptExit, cli.main, ["ssh_config", "add", "test_add"]
+        )
 
     def test_add(self):
         sample_add = os.path.join(os.path.dirname(__file__), "sample.add")
@@ -209,9 +213,9 @@ class TestSSHCli(unittest.TestCase):
     def test_rm(self):
         new_sample = os.path.join(os.path.dirname(__file__), "sample.rm")
         shutil.copy(sample, new_sample)
-        cli.main(["ssh_config", "-f", new_sample, "rm", "-y", "test_add"])
+        cli.main(["ssh_config", "-f", new_sample, "rm", "-y", "server1"])
         sshconfig = SSHConfig.load(new_sample)
-        host = sshconfig.get("test_add", raise_exception=False)
+        host = sshconfig.get("server1", raise_exception=False)
         self.assertIsNone(host)
         os.remove(new_sample)
 
