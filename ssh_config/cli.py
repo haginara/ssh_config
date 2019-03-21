@@ -13,6 +13,7 @@ from functools import partial
 from docopt import docopt
 from docopt import DocoptExit
 from jinja2 import Template
+from texttable import Texttable
 
 import ssh_config
 from .client import SSHConfig, Host
@@ -124,6 +125,9 @@ class DocOptDispather:
             return
 
         pattern = command_options.get("PATTERN", None)
+        table = Texttable(max_width=100)
+        table.set_deco(Texttable.HEADER)
+        table.header(["Host", "HostName", "User", "Port", "IdentityFile"])
         for host in sshconfig:
             if pattern is None or fnmatch.fnmatch(host.name, pattern):
                 if command_options.get("--quiet"):
@@ -131,7 +135,9 @@ class DocOptDispather:
                 elif command_options.get("--verbose"):
                     print(host)
                 else:
-                    print("%s: %s" % (host.name, host.HostName))
+                    table.add_row([host.name, host.HostName, host.User, host.Port, host.IdentityFile])
+        if not command_options.get("--queit") and not command_options.get("--verbose"):
+            print(table.draw() + "\n")
 
     def add(self, options, command_options):
         """
@@ -188,7 +194,9 @@ class DocOptDispather:
 
         if command_options.get("--verbose"):
             print("%s" % host)
-        if command_options.get("--yes") or input_is_yes("Do you want to save it", default="n"):
+        if command_options.get("--yes") or input_is_yes(
+            "Do you want to save it", default="n"
+        ):
             sshconfig.write()
 
     def rm(self, options, command_options):
@@ -205,13 +213,15 @@ class DocOptDispather:
         verbose = command_options.get("--verbose")
         hostname = command_options.get("HOSTNAME")
         host = sshconfig.get(hostname, raise_exception=False)
-        if host is None: 
+        if host is None:
             print("No hostname")
             return
         if verbose:
             print("%s" % host)
         sshconfig.remove(hostname)
-        if command_options.get("--yes") or input_is_yes("Do you want to remove %s" % hostname, default="n"):
+        if command_options.get("--yes") or input_is_yes(
+            "Do you want to remove %s" % hostname, default="n"
+        ):
             sshconfig.write()
 
     def _import(self, options, command_options):
@@ -247,7 +257,9 @@ class DocOptDispather:
                 if not queit:
                     print("Import: %s, %s" % (host.name, host.HostName))
 
-        if command_options.get("--yes") or input_is_yes("Do you want to save it", default="n"):
+        if command_options.get("--yes") or input_is_yes(
+            "Do you want to save it", default="n"
+        ):
             sshconfig.write()
 
 
