@@ -16,24 +16,37 @@ I don't remember all the servers I am managing. Also all servers requires all di
 
 Yes, I am not sure this is eaiser way to handle it. but I am trying.
 
+Requirements
+------------
+Python 2.7, 3.6, 3.7
+
+Installation
+------------
+```
+$ pip install ssh-config
+```
+
 Usage
 -----
 ```
-ssh_config.
+ssh-config.
 
     Usage:
-        ssh_config.py [options] [COMMAND] [ARGS...]
-        
+        ssh-config [options] [COMMAND] [ARGS...]
+
     Options:
         -h --help           Show this screen.
         -v --version        Show version.
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
-        
+
     Commands:
         ls          Show list of Hosts in client file
         add         Add new Host configuration
+        update      UPdate Host configuration
         rm          Remove exist Host configuration
         import      Import Hosts from csv file to SSH Client config
+        init        Create ~/.ssh/config file
+        host        Get Host information
         version     Show version information
 ```
 
@@ -42,7 +55,7 @@ Use-cases
 
 #### List hosts
 ```
-$ ssh_config ls 
+$ ssh-config ls 
 # It shows name and HostName attribute
 server1: 203.0.113.76
 *: None
@@ -53,24 +66,24 @@ server_cmd_3: 203.0.113.76
 
 ##### Add host
 ```
-$ ssh_config add "server_cmd_4" HostName=203.0.113.77 IdentityFile="~/.ssh/cmd_id_rsa"
+$ ssh-config add "server_cmd_4" HostName=203.0.113.77 IdentityFile="~/.ssh/cmd_id_rsa"
 ```
 
 ##### Update host
 ```
-$ ssh_config add --update -p "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
+$ ssh-config add --update -p "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
 ```
 
 ##### Remove host
 ```
-$ ssh_config rm "server_3" 
+$ ssh-config rm "server_3" 
 ```
 
 ### Using pattern to get list or update exist hosts
 
 ##### List hosts with pattern
 ```
-$ ssh_config ls "server_*"
+$ ssh-config ls "server_*"
 # It shows name and HostName attribute
 server_cmd_1: 203.0.113.76
 server_cmd_2: 203.0.113.76
@@ -79,5 +92,5 @@ server_cmd_3: 203.0.113.76
 
 ##### Update hosts with pattern
 ```
-$ ssh_config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
+$ ssh-config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
 ```

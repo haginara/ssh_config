@@ -16,6 +16,7 @@ from jinja2 import Template
 
 import ssh_config
 from .client import SSHConfig, Host
+from . import __version__
 
 if sys.version_info[0] < 3:
     input = raw_input
@@ -43,10 +44,10 @@ class NoExistCommand(Exception):
 
 
 class DocOptDispather:
-    """ssh_config.
+    """ssh-config {version}
 
     Usage:
-        ssh_config [options] [COMMAND] [ARGS...]
+        ssh-config [options] [COMMAND] [ARGS...]
         
     Options:
         -h --help           Show this screen.
@@ -66,13 +67,14 @@ class DocOptDispather:
 
     def __init__(self, *argv, **kwargs):
         try:
-            options = docopt(self.__doc__, *argv, **kwargs)
+            docstring = self.__doc__.format(version=__version__)
+            options = docopt(docstring, *argv, **kwargs)
         except DocoptExit:
-            raise SystemExit(self.__doc__)
+            raise SystemExit(docstring)
         command = options["COMMAND"]
 
         if command is None:
-            raise SystemExit(self.__doc__)
+            raise SystemExit(docstring)
 
         if not hasattr(self, command):
             if hasattr(self, "_%s" % command):
