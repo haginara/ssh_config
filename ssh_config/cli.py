@@ -141,7 +141,6 @@ class SSHConfigDocOpt:
         usage: ls [options] [PATTERN]
 
         Options:
-            -q --quiet      Only display Names
             -v --verbose    Verbose output
             -h --help       Show this screen
         """
@@ -156,13 +155,19 @@ class SSHConfigDocOpt:
         table.header(["Host", "HostName", "User", "Port", "IdentityFile"])
         for host in sshconfig:
             if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                if command_options.get("--quiet"):
-                    print(host.name)
-                elif command_options.get("--verbose"):
+                if command_options.get("--verbose"):
                     print(host)
                 else:
-                    table.add_row([host.name, host.HostName, host.User, host.Port, host.IdentityFile])
-        if not command_options.get("--queit") and not command_options.get("--verbose"):
+                    table.add_row(
+                        [
+                            host.name,
+                            host.HostName,
+                            host.User,
+                            host.Port,
+                            host.IdentityFile,
+                        ]
+                    )
+        if not command_options.get("--verbose"):
             print(table.draw() + "\n")
 
     def add(self, options, command_options):
