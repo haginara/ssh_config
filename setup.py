@@ -24,7 +24,7 @@ setup(
     author_email="haginara@gmail.com",
     entry_points={
         'console_scripts': [
-            'ssh_config=ssh_config.cli:main',
+            'ssh-config=ssh_config.cli:main',
         ]
     },
     packages=find_packages(),
