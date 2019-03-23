@@ -17,6 +17,7 @@ from texttable import Texttable
 
 import ssh_config
 from .client import SSHConfig, Host
+from . import __version__
 
 if sys.version_info[0] < 3:
     input = raw_input
@@ -44,10 +45,10 @@ class NoExistCommand(Exception):
 
 
 class DocOptDispather:
-    """ssh_config.
+    """ssh-config {version}
 
     Usage:
-        ssh_config [options] [COMMAND] [ARGS...]
+        ssh-config [options] [COMMAND] [ARGS...]
         
     Options:
         -h --help           Show this screen.
@@ -60,19 +61,21 @@ class DocOptDispather:
         update      UPdate Host configuration
         rm          Remove exist Host configuration
         import      Import Hosts from csv file to SSH Client config
+        init        Create ~/.ssh/config file
         host        Get Host information
         version     Show version information
     """
 
     def __init__(self, *argv, **kwargs):
         try:
-            options = docopt(self.__doc__, *argv, **kwargs)
+            docstring = self.__doc__.format(version=__version__)
+            options = docopt(docstring, *argv, **kwargs)
         except DocoptExit:
-            raise SystemExit(self.__doc__)
+            raise SystemExit(docstring)
         command = options["COMMAND"]
 
         if command is None:
-            raise SystemExit(self.__doc__)
+            raise SystemExit(docstring)
 
         if not hasattr(self, command):
             if hasattr(self, "_%s" % command):
@@ -107,6 +110,29 @@ class DocOptDispather:
                 print("Created!")
             sshconfig = SSHConfig(config)
         return sshconfig
+
+    def init(self, options, command_options):
+        """
+        Init.
+
+        usage: init [options]
+
+        Options:
+            -y --yes        Force answer yes
+            -h --help       Show this screen
+        """
+        ssh_config_folder = os.path.expanduser("~/.ssh/")
+        ssh_config_path = os.path.join(ssh_config_folder, "config")
+        if not os.path.exists(ssh_config_folder):
+            os.mkdir(ssh_config_folder)
+
+        if (
+            not os.path.exists(ssh_config_path)
+            or command_options.get("--yes")
+            or input_is_yes("~/.ssh/config exists, do you want to wipe it")
+        ):
+            print("Create %s" % ssh_config_path)
+            open(ssh_config_path, "w").write("")
 
     def ls(self, options, command_options):
         """
