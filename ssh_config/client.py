@@ -20,6 +20,7 @@ from pyparsing import (
     lineEnd,
     Suppress,
     indentedBlock,
+    ParseException,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,9 @@ class EmptySSHConfig(Exception):
     def __init__(self, path):
         super().__init__("Empty SSH Config: %s" % path)
 
+class WrongSSHConfig(Exception):
+    def __init__(self, path):
+        super().__init__("Wrong SSH Config: %s" % path)
 
 class Host(object):
     attrs = [
@@ -61,13 +65,22 @@ class Host(object):
             if attrs.get(attr):
                 self.__attrs[attr] = attr_type(attrs.get(attr))
 
-    @property
-    def attributes(self):
+    def attributes(self, exclude=[], include=[]):
+        if exclude and include:
+            raise Exception("exclude and include cannot be together")
+        if exclude:
+            return {
+                key: self.__attrs[key] for key in self.__attrs if key not in exclude
+            }
+        elif include:
+            return {
+                key: self.__attrs[key] for key in self.__attrs if key not in exclude
+            }
         return self.__attrs
 
     def __str__(self):
         data = "Host %s\n" % self.name
-        for key, value in self.attributes.items():
+        for key, value in self.__attrs.items():
             data += "    %s %s\n" % (key, value)
         return data
 
@@ -119,6 +132,8 @@ class SSHConfig(object):
             raise EmptySSHConfig(config_path)
         # logger.debug("DATA: %s", data)
         parsed = ssh_config.parse()
+        if parsed is None:
+            raise WrongSSHConfig(config_path)
         for name, config in parsed.asDict().items():
             attrs = dict()
             for attr in config:
@@ -140,7 +155,10 @@ class SSHConfig(object):
         paramDef = Dict(Group(KEY + SPACE + paramValueDef))
         block = indentedBlock(paramDef, indentStack)
         HostBlock = Dict(Group(HostDecl + block))
-        return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
+        try:
+            return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
+        except ParseException as e:
+            return None
 
     def __iter__(self):
         return self.__hosts.__iter__()
@@ -186,6 +204,6 @@ class SSHConfig(object):
         with open(self.__path, "w") as f:
             for host in self.__hosts:
                 f.write("Host %s\n" % host.name)
-                for attr in host.attributes:
+                for attr in host.attributes():
                     f.write("    %s %s\n" % (attr, host.get(attr)))
         return self.__path

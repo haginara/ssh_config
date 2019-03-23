@@ -152,11 +152,32 @@ class SSHConfigDocOpt:
         pattern = command_options.get("PATTERN", None)
         table = Texttable(max_width=100)
         table.set_deco(Texttable.HEADER)
-        table.header(["Host", "HostName", "User", "Port", "IdentityFile"])
+        header = ["Host", "HostName", "User", "Port", "IdentityFile"]
+        if command_options.get("--verbose"):
+            table.header(header + ["Others"])
+        else:
+            table.header(header)
         for host in sshconfig:
             if pattern is None or fnmatch.fnmatch(host.name, pattern):
                 if command_options.get("--verbose"):
-                    print(host)
+
+                    others = "\n".join(
+                        [
+                            "%s %s" % (key, value)
+                            for key, value in host.attributes(exclude=header).items()
+                        ]
+                    )
+
+                    table.add_row(
+                        [
+                            host.name,
+                            host.HostName,
+                            host.User,
+                            host.Port,
+                            host.IdentityFile,
+                            others,
+                        ]
+                    )
                 else:
                     table.add_row(
                         [
@@ -167,8 +188,7 @@ class SSHConfigDocOpt:
                             host.IdentityFile,
                         ]
                     )
-        if not command_options.get("--verbose"):
-            print(table.draw() + "\n")
+        print(table.draw() + "\n")
 
     def add(self, options, command_options):
         """
