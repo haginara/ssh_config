@@ -90,7 +90,10 @@ class SSHConfigDocOpt:
         command_options = docopt(command_docstring, options["ARGS"], options_first=True)
 
         # options, command_handler, command_options
-        command_handler(options, command_options)
+        try:
+            command_handler(options, command_options)
+        except Exception as e:
+            raise DocoptExit(str(e))
 
     def get_sshconfig(self, configpath, create=True):
         sshconfig = None
@@ -211,16 +214,17 @@ class SSHConfigDocOpt:
         verbose = command_options.get("--verbose")
         hostname = command_options.get("HOSTNAME")
         attrs = command_options.get("<attribute=value>", [])
+        try:
+            attrs = {attr.split("=")[0]: attr.split("=")[1] for attr in command_options.get("<attribute=value>", [])}
+        except Exception as e:
+            raise Exception("<attribute=value> like options aren't provided, %s" % e)
         use_pattern = command_options.get("--use-pattern")
         if use_pattern:
             """ use-pattern is only accept update, not add """
             hosts = [host for host in sshconfig if fnmatch.fnmatch(host.name, hostname)]
             if hosts:
                 for host in hosts:
-                    sshconfig.update(
-                        host.name,
-                        {attr.split("=")[0]: attr.split("=")[1] for attr in attrs},
-                    )
+                    sshconfig.update(host.name, attrs)
             else:
                 print("No hosts found")
                 return
@@ -231,16 +235,12 @@ class SSHConfigDocOpt:
                     print("No host to be updated, %s" % hostname)
                 if verbose:
                     print("Update attributes: %s" % attrs)
-                sshconfig.update(
-                    hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
-                )
+                sshconfig.update(hostname, attrs)
             else:
                 if host:
                     print("%s host already exist" % hostname)
                     return
-                host = Host(
-                    hostname, {attr.split("=")[0]: attr.split("=")[1] for attr in attrs}
-                )
+                host = Host(hostname, attrs)
                 sshconfig.append(host)
 
         if command_options.get("--verbose"):
