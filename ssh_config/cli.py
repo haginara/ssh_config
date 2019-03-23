@@ -43,7 +43,7 @@ class NoExistCommand(Exception):
         self.supercommand = supercommand
 
 
-class DocOptDispather:
+class SSHConfigDocOpt:
     """ssh-config {version}
 
     Usage:
@@ -284,7 +284,7 @@ class DocOptDispather:
 
 
 def main(argv=sys.argv):
-    dispatcher = DocOptDispather(
+    SSHConfigDocOpt(
         argv[1:], options_first=True, version="ssh_config %s" % ssh_config.__version__
     )
 
