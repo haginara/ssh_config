@@ -134,7 +134,7 @@ class SSHConfig(object):
         parsed = ssh_config.parse()
         if parsed is None:
             raise WrongSSHConfig(config_path)
-        for name, config in parsed.asDict().items():
+        for name, config in sorted(parsed.asDict().items()):
             attrs = dict()
             for attr in config:
                 attrs.update(attr)

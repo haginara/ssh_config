@@ -117,8 +117,8 @@ class TestSSHCli(unittest.TestCase):
         expect = u"""\
     Host         HostName     User   Port   IdentityFile
 ========================================================
-server1        203.0.113.76   None   None   None        
 *              None           None   None   None        
+server1        203.0.113.76   None   None   None        
 server_cmd_1   203.0.113.76   None   2202   None        
 server_cmd_2   203.0.113.76   user   22     None        
 server_cmd_3   203.0.113.76   user   2202   None        
@@ -129,7 +129,6 @@ server_cmd_3   203.0.113.76   user   2202   None
         with redirect_stdout(f):
             cli.main(["ssh_config", "-f", sample, "ls"])
         output = f.getvalue()
-        print(output)
         self.maxDiff = None
         self.assertEqual(expect, output)
 
@@ -146,6 +145,7 @@ server_cmd_3   203.0.113.76   user   2202   None
         with redirect_stdout(f):
             cli.main(["ssh_config", "-f", sample, "ls", "server_*"])
         output = f.getvalue()
+        self.maxDiff = None
         self.assertEqual(expect, output)
 
     def test_add_error(self):
