@@ -9,6 +9,7 @@ long_description = open(join(dirname(__file__), 'README.md')).read().strip() if 
 install_requires = [
     "pyparsing",
     "docopt",
+    "texttable",
     "Jinja2",
 ]
 
