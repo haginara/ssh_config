@@ -114,13 +114,16 @@ class TestSSHCli(unittest.TestCase):
         self.assertEqual("ssh_config 0.0.8", output)
 
     def test_ls(self):
-        expect = ("    Host         HostName     User   Port   IdentityFile\n"
-"========================================================"
-"server1        203.0.113.76   None   None   None"
-"*              None           None   None   None"
-"server_cmd_1   203.0.113.76   None   2202   None"
-"server_cmd_2   203.0.113.76   user   22     None"
-"server_cmd_3   203.0.113.76   user   2202   None")
+        expect = """\
+    Host         HostName     User   Port   IdentityFile
+========================================================
+server1        203.0.113.76   None   None   None        
+*              None           None   None   None        
+server_cmd_1   203.0.113.76   None   2202   None        
+server_cmd_2   203.0.113.76   user   22     None        
+server_cmd_3   203.0.113.76   user   2202   None        
+
+"""
 
         f = StringIO()
         with redirect_stdout(f):
@@ -131,13 +134,14 @@ class TestSSHCli(unittest.TestCase):
         self.assertEqual(expect, output)
 
     def test_ls_with_pattern(self):
-        expect = """    Host         HostName     User   Port   IdentityFile
+        expect = """\
+    Host         HostName     User   Port   IdentityFile
 ========================================================
-server1        203.0.113.76   None   None   None
-*              None           None   None   None
-server_cmd_1   203.0.113.76   None   2202   None
-server_cmd_2   203.0.113.76   user   22     None
-server_cmd_3   203.0.113.76   user   2202   None"""
+server_cmd_1   203.0.113.76   None   2202   None        
+server_cmd_2   203.0.113.76   user   22     None        
+server_cmd_3   203.0.113.76   user   2202   None        
+
+"""
         f = StringIO()
         with redirect_stdout(f):
             cli.main(["ssh_config", "-f", sample, "ls", "server_*"])
