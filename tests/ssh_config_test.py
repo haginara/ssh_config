@@ -114,7 +114,7 @@ class TestSSHCli(unittest.TestCase):
         self.assertEqual("ssh_config 0.0.8", output)
 
     def test_ls(self):
-        expect = """\
+        expect = u"""\
     Host         HostName     User   Port   IdentityFile
 ========================================================
 server1        203.0.113.76   None   None   None        
@@ -134,7 +134,7 @@ server_cmd_3   203.0.113.76   user   2202   None
         self.assertEqual(expect, output)
 
     def test_ls_with_pattern(self):
-        expect = """\
+        expect = u"""\
     Host         HostName     User   Port   IdentityFile
 ========================================================
 server_cmd_1   203.0.113.76   None   2202   None        
