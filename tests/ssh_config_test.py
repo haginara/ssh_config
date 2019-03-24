@@ -29,7 +29,7 @@ new_data = """Host server2
 
 class TestSSHConfig(unittest.TestCase):
     def test_version(self):
-        self.assertEqual("0.0.8", __version__)
+        self.assertEqual("0.0.9", __version__)
 
     def test_load(self):
         configs = SSHConfig.load(sample)
@@ -111,7 +111,7 @@ class TestSSHCli(unittest.TestCase):
             except SystemExit:
                 pass
             output = f.getvalue().strip()
-        self.assertEqual("ssh_config 0.0.8", output)
+        self.assertEqual("ssh_config 0.0.9", output)
 
     def test_ls(self):
         expect = u"""\
