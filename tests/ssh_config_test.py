@@ -344,8 +344,8 @@ server_cmd_3,203.0.113.76,user,2202,,
                 f.read(),
             )
         os.remove(outfile)
-        # cli.main(["ssh_config", "-f", sample, "export", "json", "sample.json"])
-        # cli.main(["ssh_config", "-f", sample, "export", "ansible", "sample.yml"])
+        # cli.main(["ssh_config", "-f", sample, "export", "json", outfile])
+        # cli.main(["ssh_config", "-f", sample, "export", "ansible", outfile])
 
 
 if __name__ == "__main__":
