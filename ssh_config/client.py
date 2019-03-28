@@ -30,13 +30,21 @@ class EmptySSHConfig(Exception):
     def __init__(self, path):
         super().__init__("Empty SSH Config: %s" % path)
 
+
 class WrongSSHConfig(Exception):
     def __init__(self, path):
         super().__init__("Wrong SSH Config: %s" % path)
 
+
 class Host(object):
     attrs = [
         ("HostName", str),
+        ("User", str),
+        ("Port", int),
+        ("IdentityFile", str),
+        ("ProxyCommand", str),
+        ("LocalCommand", str),
+        ("LocalForward", str),
         ("Match", str),
         ("AddKeysToAgent", str),
         ("AddressFamily", str),
@@ -46,14 +54,8 @@ class Host(object):
         ("CanonialDomains", str),
         ("CnonicalizeFallbackLocal", str),
         ("IdentityAgent", str),
-        ("IdentityFile", str),
-        ("LocalCommand", str),
-        ("LocalForward", str),
         ("LogLevel", str),
-        ("Port", int),
         ("PreferredAuthentications", str),
-        ("ProxyCommand", str),
-        ("User", str),
         ("ServerAliveInterval", int),
     ]
 
@@ -74,7 +76,7 @@ class Host(object):
             }
         elif include:
             return {
-                key: self.__attrs[key] for key in self.__attrs if key not in exclude
+                key: self.__attrs[key] for key in self.__attrs if key in include
             }
         return self.__attrs
 
@@ -207,3 +209,6 @@ class SSHConfig(object):
                 for attr in host.attributes():
                     f.write("    %s %s\n" % (attr, host.get(attr)))
         return self.__path
+
+    def asdict(self):
+        return {host.name: host.attributes() for host in self.__hosts}

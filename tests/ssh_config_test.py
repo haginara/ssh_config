@@ -28,9 +28,6 @@ new_data = """Host server2
 
 
 class TestSSHConfig(unittest.TestCase):
-    def test_version(self):
-        self.assertEqual("0.0.9", __version__)
-
     def test_load(self):
         configs = SSHConfig.load(sample)
         for config in configs:
@@ -101,8 +98,34 @@ class TestSSHConfig(unittest.TestCase):
             "ssh -p 2202 user@203.0.113.76", configs.get("server_cmd_3").command()
         )
 
+    def test_asdict(self):
+        configs = SSHConfig.load(sample)
+        self.assertEqual(
+            {
+                "*": {"ServerAliveInterval": 40},
+                "server1": {"HostName": "203.0.113.76", "ServerAliveInterval": 200},
+                "server_cmd_1": {"HostName": "203.0.113.76", "Port": 2202},
+                "server_cmd_2": {
+                    "HostName": "203.0.113.76",
+                    "Port": 22,
+                    "User": "user",
+                },
+                "server_cmd_3": {
+                    "HostName": "203.0.113.76",
+                    "Port": 2202,
+                    "User": "user",
+                },
+            },
+            configs.asdict(),
+        )
+
 
 class TestSSHCli(unittest.TestCase):
+    def tearDown(self):
+        outfile = os.path.join(os.path.dirname(__file__), "sample.out")
+        if os.path.exists(outfile):
+            os.remove(outfile)
+
     def test_cli(self):
         f = StringIO()
         with redirect_stdout(f):
@@ -111,7 +134,7 @@ class TestSSHCli(unittest.TestCase):
             except SystemExit:
                 pass
             output = f.getvalue().strip()
-        self.assertEqual("ssh_config 0.0.9", output)
+        self.assertTrue(output.startswith("ssh_config"))
 
     def test_ls(self):
         expect = u"""\
@@ -260,6 +283,69 @@ server_cmd_3   203.0.113.76   user   2202   None
         self.assertTrue(import_1)
         self.assertTrue(import_2)
         os.remove(new_sample)
+
+    def test_export(self):
+        self.maxDiff = None
+        outfile = os.path.join(os.path.dirname(__file__), "sample.out")
+        cli.main(["ssh_config", "-f", sample, "export", outfile])
+        with open(outfile, "r") as f:
+            self.assertEqual(
+                """\
+Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
+*,,,,,,,,,,,,,,,,,,,40
+server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
+server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,
+server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,
+server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
+""",
+                f.read(),
+            )
+        os.remove(outfile)
+
+        cli.main(["ssh_config", "-f", sample, "export", "csv", outfile])
+        with open(outfile, "r") as f:
+            self.assertEqual(
+                """\
+Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
+*,,,,,,,,,,,,,,,,,,,40
+server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
+server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,
+server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,
+server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
+""",
+                f.read(),
+            )
+        os.remove(outfile)
+        cli.main(["ssh_config", "-f", sample, "export", "-x", "csv", outfile])
+        with open(outfile, "r") as f:
+            self.assertEqual(
+                """\
+Name,HostName,User,Port,IdentityFile
+*,,,,
+server1,203.0.113.76,,,
+server_cmd_1,203.0.113.76,,2202,
+server_cmd_2,203.0.113.76,user,22,
+server_cmd_3,203.0.113.76,user,2202,
+""",
+                f.read(),
+            )
+        os.remove(outfile)
+        cli.main(["ssh_config", "-f", sample, "export", "-c","HostName,User,Port,IdentityFile,ServerAliveInterval", "csv", outfile])
+        with open(outfile, "r") as f:
+            self.assertEqual(
+                """\
+Name,HostName,User,Port,IdentityFile,ServerAliveInterval
+*,,,,,40
+server1,203.0.113.76,,,,200
+server_cmd_1,203.0.113.76,,2202,,
+server_cmd_2,203.0.113.76,user,22,,
+server_cmd_3,203.0.113.76,user,2202,,
+""",
+                f.read(),
+            )
+        os.remove(outfile)
+        # cli.main(["ssh_config", "-f", sample, "export", "json", "sample.json"])
+        # cli.main(["ssh_config", "-f", sample, "export", "ansible", "sample.yml"])
 
 
 if __name__ == "__main__":

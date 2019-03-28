@@ -58,11 +58,10 @@ class SSHConfigDocOpt:
     Commands:
         ls          Show list of Hosts in client file
         add         Add new Host configuration
-        update      UPdate Host configuration
         rm          Remove exist Host configuration
-        import      Import Hosts from csv file to SSH Client config
         init        Create ~/.ssh/config file
-        host        Get Host information
+        import      Import Hosts from csv file to SSH Client config
+        export      Export Hosts to csv format
         version     Show version information
     """
 
@@ -215,7 +214,10 @@ class SSHConfigDocOpt:
         hostname = command_options.get("HOSTNAME")
         attrs = command_options.get("<attribute=value>", [])
         try:
-            attrs = {attr.split("=")[0]: attr.split("=")[1] for attr in command_options.get("<attribute=value>", [])}
+            attrs = {
+                attr.split("=")[0]: attr.split("=")[1]
+                for attr in command_options.get("<attribute=value>", [])
+            }
         except Exception as e:
             raise Exception("<attribute=value> like options aren't provided, %s" % e)
         use_pattern = command_options.get("--use-pattern")
@@ -312,6 +314,58 @@ class SSHConfigDocOpt:
             "Do you want to save it", default="n"
         ):
             sshconfig.write()
+
+    def export(self, options, command_options):
+        """
+        Export hosts.
+        Usage: export [options] ([FORMAT] <file> | <file>)
+        
+        Options:
+            -x                  Export only essential fields
+            -c columns          Column names, A comma separted list of field names. 
+            -h --help           Show this screen
+            -v --verbose        Verbose output
+            -q --quiet          Quiet output
+            -y --yes            Forcily yes
+        
+        Format:
+            csv [default]
+            json
+            ansible
+            yml
+        """
+        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
+        if sshconfig is None:
+            print("No config exist: %s" % options.get("--config"))
+            return
+        queit = command_options.get("--quiet")
+        verbose = command_options.get("--verbose")
+        essential = command_options.get("-x")
+        fields = (
+            command_options.get("-c").split(",") if command_options.get("-c") else []
+        )
+        outfile = command_options.get("<file>")
+        outformat = command_options.get("FORMAT") or "csv"
+        if os.path.exists(outfile):
+            if not command_options.get("--yes") or not input_is_yes(
+                "Do you want to overwrite it", default="n"
+            ):
+                return
+
+        with open(outfile, "w") as f:
+            if outformat == "csv":
+                if essential:
+                    header = ["HostName", "User", "Port", "IdentityFile"]
+                elif fields:
+                    header = fields
+                else:
+                    header = [attr for attr, attr_type in Host.attrs]
+                writer = csv.DictWriter(f, fieldnames=["Name"] + header)
+                writer.writeheader()
+                for host in sshconfig:
+                    row = {"Name": host.name}
+                    row.update(host.attributes(include=header))
+                    writer.writerow(row)
 
 
 def main(argv=sys.argv):
