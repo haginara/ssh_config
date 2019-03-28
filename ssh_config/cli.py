@@ -330,9 +330,6 @@ class SSHConfigDocOpt:
         
         Format:
             csv [default]
-            json
-            ansible
-            yml
         """
         sshconfig = self.get_sshconfig(options.get("--config"), create=False)
         if sshconfig is None:
