@@ -330,7 +330,18 @@ server_cmd_3,203.0.113.76,user,2202,
                 f.read(),
             )
         os.remove(outfile)
-        cli.main(["ssh_config", "-f", sample, "export", "-c","HostName,User,Port,IdentityFile,ServerAliveInterval", "csv", outfile])
+        cli.main(
+            [
+                "ssh_config",
+                "-f",
+                sample,
+                "export",
+                "-c",
+                "HostName,User,Port,IdentityFile,ServerAliveInterval",
+                "csv",
+                outfile,
+            ]
+        )
         with open(outfile, "r") as f:
             self.assertEqual(
                 """\

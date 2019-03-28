@@ -75,9 +75,7 @@ class Host(object):
                 key: self.__attrs[key] for key in self.__attrs if key not in exclude
             }
         elif include:
-            return {
-                key: self.__attrs[key] for key in self.__attrs if key in include
-            }
+            return {key: self.__attrs[key] for key in self.__attrs if key in include}
         return self.__attrs
 
     def __str__(self):
