@@ -358,7 +358,7 @@ class SSHConfigDocOpt:
                     header = fields
                 else:
                     header = [attr for attr, attr_type in Host.attrs]
-                writer = csv.DictWriter(f, fieldnames=["Name"] + header)
+                writer = csv.DictWriter(f, fieldnames=["Name"] + header, lineterminator='\n')
                 writer.writeheader()
                 for host in sshconfig:
                     row = {"Name": host.name}
