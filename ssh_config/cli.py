@@ -336,7 +336,6 @@ class SSHConfigDocOpt:
         if sshconfig is None:
             print("No config exist: %s" % options.get("--config"))
             return
-        print (command_options)
         queit = command_options.get("--quiet")
         verbose = command_options.get("--verbose")
         essential = command_options.get("-x")
@@ -384,13 +383,13 @@ class SSHConfigDocOpt:
                 for host in sshconfig:
                     if host.name == "*":
                         continue
-                    line = "{:<20}ansible_host={:<20}ansible_user={:<10}".format(
-                        host.name, host.HostName, host.User
-                    )
+                    line = "{:<20}ansible_host={:<20}".format(host.name, host.HostName)
+                    if host.User:
+                        line += "ansible_user={:<10}".format(host.User)
                     if host.IdentityFile:
                         line += "ansible_ssh_private_key_file={:<20}".format(
                             os.path.expanduser(host.IdentityFile)
-                    )
+                        )
                     if verbose:
                         print(line)
                     f.write("%s\n" % line)

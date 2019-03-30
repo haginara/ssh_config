@@ -355,6 +355,30 @@ server_cmd_3,203.0.113.76,user,2202,,
                 f.read(),
             )
         os.remove(outfile)
+        cli.main(
+            [
+                "ssh_config",
+                "-f",
+                sample,
+                "export",
+                "-g",
+                "linux",
+                "ansible",
+                outfile,
+            ]
+        )
+        with open(outfile, "r") as f:
+            self.assertEqual(
+                u"""\
+[linux]
+server1             ansible_host=203.0.113.76        
+server_cmd_1        ansible_host=203.0.113.76        
+server_cmd_2        ansible_host=203.0.113.76        ansible_user=user      
+server_cmd_3        ansible_host=203.0.113.76        ansible_user=user      
+""",
+                f.read(),
+            )
+        os.remove(outfile)
         # cli.main(["ssh_config", "-f", sample, "export", "json", outfile])
         # cli.main(["ssh_config", "-f", sample, "export", "ansible", outfile])
 
