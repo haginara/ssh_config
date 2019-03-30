@@ -344,7 +344,8 @@ class SSHConfigDocOpt:
         outfile = command_options.get("<file>")
         outformat = command_options.get("FORMAT") or "csv"
         if os.path.exists(outfile):
-            if not command_options.get("--yes") or not input_is_yes(
+            print("%s exists." % outfile)
+            if not command_options.get("--yes") and not input_is_yes(
                 "Do you want to overwrite it", default="n"
             ):
                 return
