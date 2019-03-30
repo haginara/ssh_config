@@ -290,7 +290,7 @@ server_cmd_3   203.0.113.76   user   2202   None
         cli.main(["ssh_config", "-f", sample, "export", outfile])
         with open(outfile, "r") as f:
             self.assertEqual(
-                """\
+                u"""\
 Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
 *,,,,,,,,,,,,,,,,,,,40
 server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
@@ -305,7 +305,7 @@ server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
         cli.main(["ssh_config", "-f", sample, "export", "csv", outfile])
         with open(outfile, "r") as f:
             self.assertEqual(
-                """\
+                u"""\
 Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
 *,,,,,,,,,,,,,,,,,,,40
 server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
@@ -319,7 +319,7 @@ server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
         cli.main(["ssh_config", "-f", sample, "export", "-x", "csv", outfile])
         with open(outfile, "r") as f:
             self.assertEqual(
-                """\
+                u"""\
 Name,HostName,User,Port,IdentityFile
 *,,,,
 server1,203.0.113.76,,,
@@ -344,7 +344,7 @@ server_cmd_3,203.0.113.76,user,2202,
         )
         with open(outfile, "r") as f:
             self.assertEqual(
-                """\
+                u"""\
 Name,HostName,User,Port,IdentityFile,ServerAliveInterval
 *,,,,,40
 server1,203.0.113.76,,,,200
