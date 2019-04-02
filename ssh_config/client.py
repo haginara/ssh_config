@@ -57,6 +57,7 @@ class Host(object):
         ("LogLevel", str),
         ("PreferredAuthentications", str),
         ("ServerAliveInterval", int),
+        ("ForwardAgent", str),
     ]
 
     def __init__(self, name, attrs):
@@ -97,7 +98,7 @@ class Host(object):
         return self.__attrs.get(key, default)
 
     def set(self, key, value):
-        return self.__attrs.set(key, value)
+        self.__attrs[key] = value
 
     def command(self, cmd="ssh"):
         if self.Port and self.Port != 22:

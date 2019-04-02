@@ -62,6 +62,7 @@ class SSHConfigDocOpt:
         init        Create ~/.ssh/config file
         import      Import Hosts from csv file to SSH Client config
         export      Export Hosts to csv format
+        bastion     Bastion register/use
         version     Show version information
     """
 
@@ -116,7 +117,6 @@ class SSHConfigDocOpt:
     def init(self, options, command_options):
         """
         Init.
-
         usage: init [options]
 
         Options:
@@ -139,7 +139,6 @@ class SSHConfigDocOpt:
     def ls(self, options, command_options):
         """
         List hosts.
-
         usage: ls [options] [PATTERN]
 
         Options:
@@ -199,6 +198,7 @@ class SSHConfigDocOpt:
 
         Options:
             --update            If host exists, update it.
+            -b --bastion        Add attributes for Bastion host
             -p --use-pattern    Use pattern to find hosts
             -y --yes            Force answer yes
             -v --verbose        Verbose Output
@@ -213,11 +213,14 @@ class SSHConfigDocOpt:
         verbose = command_options.get("--verbose")
         hostname = command_options.get("HOSTNAME")
         attrs = command_options.get("<attribute=value>", [])
+        is_bastion = command_options.get("--bastion")
         try:
             attrs = {
                 attr.split("=")[0]: attr.split("=")[1]
                 for attr in command_options.get("<attribute=value>", [])
             }
+            if is_bastion:
+                attrs.update({"ProxyCommand": "none", "ForwardAgent": "yes"})
         except Exception as e:
             raise Exception("<attribute=value> like options aren't provided, %s" % e)
         use_pattern = command_options.get("--use-pattern")
@@ -336,7 +339,7 @@ class SSHConfigDocOpt:
         if sshconfig is None:
             print("No config exist: %s" % options.get("--config"))
             return
-        queit = command_options.get("--quiet")
+        quiet = command_options.get("--quiet")
         verbose = command_options.get("--verbose")
         essential = command_options.get("-x")
         group = command_options.get("--group")
@@ -360,6 +363,7 @@ class SSHConfigDocOpt:
                     header = fields
                 else:
                     header = [attr for attr, attr_type in Host.attrs]
+
                 writer = csv.DictWriter(
                     f, fieldnames=["Name"] + header, lineterminator="\n"
                 )
@@ -393,6 +397,39 @@ class SSHConfigDocOpt:
                     if verbose:
                         print(line)
                     f.write("%s\n" % line)
+
+    def bastion(self, options, command_options):
+        """
+        Manage Bastion hosts
+        Usage: bastion [options] <bastion> <server>...
+        
+        Options:
+            -h --help           Show this screen
+            -v --verbose        Verbose output
+            -y --yes            Forcily yes
+        """
+        sshconfig = self.get_sshconfig(options.get("--config"))
+        verbose = command_options.get("--verbose")
+        bastion = command_options.get("<bastion>")
+        servers = command_options.get("<server>", [])
+
+        bastion_host = sshconfig.get(bastion)
+        forward_agent = bastion_host.get("ForwardAgent", None)
+        if forward_agent is None or forward_agent != "yes":
+            print("%s is not bastion server" % bastion)
+            return
+
+        for server in servers:
+            host = sshconfig.get(server, raise_exception=False)
+            if host is None:
+                print("%s does not exist" % server)
+                return
+            if host.get("ProxyCommand", None):
+                if not command_options.get("--yes") and not input_is_yes(
+                    "%s has ProxyComamnd, %s" % (host, host.ProxyCommand), default="n"
+                ):
+                    return
+            host.set("ProxyCommand", "ProxyCommand ssh -q -A bastion -W %h:%p")
 
 
 def main(argv=sys.argv):
