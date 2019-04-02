@@ -100,7 +100,7 @@ class SSHConfigDocOpt:
         if os.path.exists(config):
             try:
                 sshconfig = SSHConfig.load(config)
-            except ssh_config.EmptySSHConfig as e:
+            except ssh_config.EmptySSHConfig:
                 sshconfig = SSHConfig(config)
         elif create:
             answer = input_is_yes(
@@ -322,6 +322,7 @@ class SSHConfigDocOpt:
         
         Options:
             -x                  Export only essential fields
+            -g --group GROUP    Name of group
             -c columns          Column names, A comma separted list of field names. 
             -h --help           Show this screen
             -v --verbose        Verbose output
@@ -338,6 +339,7 @@ class SSHConfigDocOpt:
         queit = command_options.get("--quiet")
         verbose = command_options.get("--verbose")
         essential = command_options.get("-x")
+        group = command_options.get("--group")
         fields = (
             command_options.get("-c").split(",") if command_options.get("-c") else []
         )
@@ -358,12 +360,39 @@ class SSHConfigDocOpt:
                     header = fields
                 else:
                     header = [attr for attr, attr_type in Host.attrs]
-                writer = csv.DictWriter(f, fieldnames=["Name"] + header)
+                writer = csv.DictWriter(
+                    f, fieldnames=["Name"] + header, lineterminator="\n"
+                )
                 writer.writeheader()
                 for host in sshconfig:
                     row = {"Name": host.name}
                     row.update(host.attributes(include=header))
                     writer.writerow(row)
+            elif outformat == "ansible":
+                """
+                in INI
+                jumper ansible_port=5555 ansible_host=192.0.2.50
+                in YAML
+                hosts:
+                    jumper:
+                        ansible_port: 5555
+                        ansible_host: 192.0.2.50
+                """
+                if group:
+                    f.write("[%s]\n" % group)
+                for host in sshconfig:
+                    if host.name == "*":
+                        continue
+                    line = "{:<20}ansible_host={:<20}".format(host.name, host.HostName)
+                    if host.User:
+                        line += "ansible_user={:<10}".format(host.User)
+                    if host.IdentityFile:
+                        line += "ansible_ssh_private_key_file={:<20}".format(
+                            os.path.expanduser(host.IdentityFile)
+                        )
+                    if verbose:
+                        print(line)
+                    f.write("%s\n" % line)
 
 
 def main(argv=sys.argv):
