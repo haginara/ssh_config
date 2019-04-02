@@ -94,3 +94,9 @@ server_cmd_3: 203.0.113.76
 ```
 $ ssh-config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
 ```
+
+
+#### add ssh key to multiple servers
+```
+ssh-config ls --only-name | xargs -I{} ssh-copy-id -i ~/.ssh/id_rsa {}
+```
