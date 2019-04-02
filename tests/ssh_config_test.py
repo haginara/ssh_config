@@ -64,6 +64,32 @@ class TestSSHConfig(unittest.TestCase):
         self.assertRaises(AttributeError, configs.update, "server1", [])
         self.assertEqual(configs.get("server1").IdentityFile, "~/.ssh/id_rsa_new")
 
+        attrs = {
+            "HostName": "example.com",
+            "User": "test",
+            "Port": 22,
+            "IdentityFile": "~/.ssh/id_rsa",
+            "ProxyCommand": "",
+            "LocalCommand": "",
+            "LocalForward": "",
+            "Match": "",
+            "AddKeysToAgent": "",
+            "AddressFamily": "",
+            "BatchMode": "",
+            "BindAddress": "",
+            "BindInterface": "",
+            "CanonialDomains": "",
+            "CnonicalizeFallbackLocal": "",
+            "IdentityAgent": "",
+            "LogLevel": "",
+            "PreferredAuthentications": "",
+            "ServerAliveInterval": 10,
+            "ForwardAgent": "",
+        }
+        configs.update("server1", attrs)
+        for attr, attr_type in Host.attrs:
+            self.assertEqual(getattr(configs.get("server1"), attr), attrs[attr])
+
     def test_write(self):
         configs = SSHConfig.load(sample)
         configs.append(new_host)
@@ -291,12 +317,12 @@ server_cmd_3   203.0.113.76   user   2202   None
         with open(outfile, "r") as f:
             self.assertEqual(
                 u"""\
-Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
-*,,,,,,,,,,,,,,,,,,,40
-server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
-server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,
-server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,
-server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
+Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval,ForwardAgent
+*,,,,,,,,,,,,,,,,,,,40,
+server1,203.0.113.76,,,,,,,,,,,,,,,,,,200,
+server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,,
+server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,,
+server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,,
 """,
                 f.read(),
             )
@@ -306,12 +332,12 @@ server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
         with open(outfile, "r") as f:
             self.assertEqual(
                 u"""\
-Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval
-*,,,,,,,,,,,,,,,,,,,40
-server1,203.0.113.76,,,,,,,,,,,,,,,,,,200
-server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,
-server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,
-server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,
+Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval,ForwardAgent
+*,,,,,,,,,,,,,,,,,,,40,
+server1,203.0.113.76,,,,,,,,,,,,,,,,,,200,
+server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,,
+server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,,
+server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,,
 """,
                 f.read(),
             )
@@ -356,16 +382,7 @@ server_cmd_3,203.0.113.76,user,2202,,
             )
         os.remove(outfile)
         cli.main(
-            [
-                "ssh_config",
-                "-f",
-                sample,
-                "export",
-                "-g",
-                "linux",
-                "ansible",
-                outfile,
-            ]
+            ["ssh_config", "-f", sample, "export", "-g", "linux", "ansible", outfile]
         )
         with open(outfile, "r") as f:
             self.assertEqual(
@@ -381,6 +398,56 @@ server_cmd_3        ansible_host=203.0.113.76        ansible_user=user
         os.remove(outfile)
         # cli.main(["ssh_config", "-f", sample, "export", "json", outfile])
         # cli.main(["ssh_config", "-f", sample, "export", "ansible", outfile])
+
+    def test_bastion(self):
+        self.maxDiff = None
+        new_sample = os.path.join(os.path.dirname(__file__), "sample.update")
+        shutil.copy(sample, new_sample)
+        cli.main(
+            [
+                "ssh_config",
+                "-f",
+                new_sample,
+                "add",
+                "-b",
+                "-y",
+                "bastion1",
+                "HostName=bastion.example.com",
+                "User=ssh_user",
+            ]
+        )
+        configs = SSHConfig.load(new_sample)
+        self.assertEqual(
+            configs.get("bastion1").attributes(),
+            {
+                "HostName": "bastion.example.com",
+                "User": "ssh_user",
+                "ProxyCommand": "none",
+                "ForwardAgent": "yes",
+            },
+        )
+        cli.main(
+            [
+                "ssh_config",
+                "-f",
+                new_sample,
+                "bastion",
+                "-y",
+                "bastion1",
+                "server1",
+            ]
+        )
+        configs = SSHConfig.load(new_sample)
+        self.assertEqual(
+            configs.get("bastion1").attributes(),
+            {
+                "HostName": "bastion.example.com",
+                "User": "ssh_user",
+                "ProxyCommand": "none",
+                "ForwardAgent": "yes",
+            },
+        )
+        os.remove(new_sample)
 
 
 if __name__ == "__main__":
