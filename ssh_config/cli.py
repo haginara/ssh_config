@@ -152,22 +152,29 @@ class SSHConfigDocOpt:
             print("No config exist: %s" % options.get("--config"))
             return
 
-        name_only = command_options.get("--only-name")
+        only_name = command_options.get("--only-name")
         pattern = command_options.get("PATTERN", None)
-        if not name_only:
-            table = Texttable(max_width=100)
-            table.set_deco(Texttable.HEADER)
-            header = ["Host", "HostName", "User", "Port", "IdentityFile"]
-            if command_options.get("--verbose"):
-                table.header(header + ["Others"])
-            else:
-                table.header(header)
+
+        # Print plain
+        if only_name:
+            for host in sshconfig:
+                if pattern is None or fnmatch.fnmatch(host.name, pattern):
+                    if only_name:
+                        if host.name != "*":
+                            print(host.name)
+            return
+
+        ## Print Table
+        table = Texttable(max_width=100)
+        table.set_deco(Texttable.HEADER)
+        header = ["Host", "HostName", "User", "Port", "IdentityFile"]
+        if command_options.get("--verbose"):
+            table.header(header + ["Others"])
+        else:
+            table.header(header)
         for host in sshconfig:
             if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                if name_only:
-                    if host.name != "*":
-                        print(host.name)
-                elif command_options.get("--verbose"):
+                if command_options.get("--verbose"):
                     others = "\n".join(
                         [
                             "%s %s" % (key, value)
@@ -195,8 +202,6 @@ class SSHConfigDocOpt:
                             host.IdentityFile,
                         ]
                     )
-        if name_only:
-            return
         print(table.draw() + "\n")
 
     def add(self, options, command_options):
