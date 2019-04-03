@@ -29,7 +29,7 @@ $ pip install ssh-config
 Usage
 -----
 ```
-ssh-config.
+ssh-config 0.0.12
 
     Usage:
         ssh-config [options] [COMMAND] [ARGS...]
@@ -42,11 +42,11 @@ ssh-config.
     Commands:
         ls          Show list of Hosts in client file
         add         Add new Host configuration
-        update      UPdate Host configuration
         rm          Remove exist Host configuration
-        import      Import Hosts from csv file to SSH Client config
         init        Create ~/.ssh/config file
-        host        Get Host information
+        import      Import Hosts from csv file to SSH Client config
+        export      Export Hosts to csv format
+        bastion     Bastion register/use
         version     Show version information
 ```
 
