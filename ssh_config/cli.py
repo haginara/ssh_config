@@ -142,9 +142,10 @@ class SSHConfigDocOpt:
         usage: ls [options] [PATTERN]
 
         Options:
-            --only-name     Print name only
-            -v --verbose    Verbose output
-            -h --help       Show this screen
+            --only-name             Print name only
+            --fields [FIELD...]     Print selected fields, fielda are spliited by ','
+            -v --verbose            Verbose output
+            -h --help               Show this screen
         """
         sshconfig = self.get_sshconfig(options.get("--config"), create=False)
         if sshconfig is None:
@@ -152,15 +153,22 @@ class SSHConfigDocOpt:
             return
 
         only_name = command_options.get("--only-name")
+        fields = command_options.get("--fields") 
         pattern = command_options.get("PATTERN", None)
 
         # Print plain
         if only_name:
             for host in sshconfig:
                 if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                    if only_name:
-                        if host.name != "*":
-                            print(host.name)
+                    if host.name != "*":
+                        print(host.name)
+            return
+        elif fields:
+            for host in sshconfig:
+                if pattern is None or fnmatch.fnmatch(host.name, pattern):
+                    if host.name != "*":
+                        row = ",".join([getattr(host, field) for field in fields.split(",")])
+                        print(row)
             return
 
         ## Print Table
