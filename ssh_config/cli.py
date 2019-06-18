@@ -19,6 +19,7 @@ import ssh_config
 from .client import SSHConfig, Host
 from . import __version__
 
+
 if sys.version_info[0] < 3:
     input = raw_input
 
@@ -57,6 +58,7 @@ class SSHConfigDocOpt:
         
     Commands:
         ls          Show list of Hosts in client file
+        get         Get ssh client config with Name
         add         Add new Host configuration
         rm          Remove exist Host configuration
         init        Create ~/.ssh/config file
@@ -135,6 +137,26 @@ class SSHConfigDocOpt:
         ):
             print("Create %s" % ssh_config_path)
             open(ssh_config_path, "w").write("")
+
+    def get(self, options, command_options):
+        """
+        Get hosts.
+        usage: get [options] [PATTERN]
+
+        Options:
+            -h --help           Show this screen
+        """
+        pattern = command_options.get("PATTERN", None)
+        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
+        if sshconfig is None:
+            print("No config exist: %s" % options.get("--config"))
+            return
+
+        # Print plain
+        for host in sshconfig:
+            if pattern is None or fnmatch.fnmatch(host.name, pattern):
+                if host.name != "*":
+                    print(host)
 
     def ls(self, options, command_options):
         """
