@@ -6,11 +6,11 @@ Host *
 Host server_cmd_1
     HostName 203.0.113.76
     Port 2202
-Host server_cmd_2
+host server_cmd_2
     HostName 203.0.113.76
     Port 22
     User user
-Host server_cmd_3
-    HostName 203.0.113.76
-    Port 2202
+HosT server_cmd_3
+    hostname 203.0.113.76
+    port 2202
     User user

@@ -4,6 +4,8 @@ import logging
 import subprocess  # call
 from pyparsing import (
     Literal,
+    CaselessLiteral,
+    CaselessKeyword,
     White,
     Word,
     alphanums,
@@ -63,10 +65,10 @@ class Host(object):
     def __init__(self, name, attrs):
         self.name = name
         self.__attrs = dict()
-
+        attrs = {key.upper(): value for key, value in attrs.items()}
         for attr, attr_type in self.attrs:
-            if attrs.get(attr):
-                self.__attrs[attr] = attr_type(attrs.get(attr))
+            if attrs.get(attr.upper()):
+                self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
 
     def attributes(self, exclude=[], include=[]):
         if exclude and include:
@@ -146,7 +148,7 @@ class SSHConfig(object):
         if data:
             self.raw = data
         SPACE = White().suppress()
-        HOST = Literal("Host").suppress()
+        HOST = CaselessLiteral("Host").suppress()
         KEY = Word(alphanums + "~*._-/")
         VALUE = Word(alphanums + "~*._-/")
         paramValueDef = SkipTo("#" | lineEnd)
@@ -159,6 +161,7 @@ class SSHConfig(object):
         try:
             return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
         except ParseException as e:
+            print(e)
             return None
 
     def __iter__(self):
