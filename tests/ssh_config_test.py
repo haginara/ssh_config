@@ -47,6 +47,8 @@ class TestSSHConfig(unittest.TestCase):
         configs = SSHConfig.load(sample)
         host_0 = configs[0]
         host_1 = configs[1]
+        self.assertTrue(isinstance(host_0, Host))
+        self.assertTrue(isinstance(host_1, Host))
 
     def test_get_host(self):
         configs = SSHConfig.load(sample)
@@ -141,6 +143,11 @@ class TestSSHConfig(unittest.TestCase):
                     "Port": 2202,
                     "User": "user",
                 },
+                "host_1 host_2": {
+                    "HostName": "%h.test.com",
+                    "Port": 2202,
+                    "User": "user",
+                },
             },
             configs.asdict(),
         )
@@ -164,13 +171,14 @@ class TestSSHCli(unittest.TestCase):
 
     def test_ls(self):
         expect = u"""\
-    Host         HostName     User   Port   IdentityFile
-========================================================
-*              None           None   None   None        
-server1        203.0.113.76   None   None   None        
-server_cmd_1   203.0.113.76   None   2202   None        
-server_cmd_2   203.0.113.76   user   22     None        
-server_cmd_3   203.0.113.76   user   2202   None        
+    Host          HostName     User   Port   IdentityFile
+=========================================================
+*               None           None   None   None        
+host_1 host_2   %h.test.com    user   2202   None        
+server1         203.0.113.76   None   None   None        
+server_cmd_1    203.0.113.76   None   2202   None        
+server_cmd_2    203.0.113.76   user   22     None        
+server_cmd_3    203.0.113.76   user   2202   None        
 
 """
 
@@ -319,6 +327,7 @@ server_cmd_3   203.0.113.76   user   2202   None
                 u"""\
 Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval,ForwardAgent
 *,,,,,,,,,,,,,,,,,,,40,
+host_1 host_2,%h.test.com,user,2202,,,,,,,,,,,,,,,,,
 server1,203.0.113.76,,,,,,,,,,,,,,,,,,200,
 server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,,
 server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,,
@@ -334,6 +343,7 @@ server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,,
                 u"""\
 Name,HostName,User,Port,IdentityFile,ProxyCommand,LocalCommand,LocalForward,Match,AddKeysToAgent,AddressFamily,BatchMode,BindAddress,BindInterface,CanonialDomains,CnonicalizeFallbackLocal,IdentityAgent,LogLevel,PreferredAuthentications,ServerAliveInterval,ForwardAgent
 *,,,,,,,,,,,,,,,,,,,40,
+host_1 host_2,%h.test.com,user,2202,,,,,,,,,,,,,,,,,
 server1,203.0.113.76,,,,,,,,,,,,,,,,,,200,
 server_cmd_1,203.0.113.76,,2202,,,,,,,,,,,,,,,,,
 server_cmd_2,203.0.113.76,user,22,,,,,,,,,,,,,,,,,
@@ -348,6 +358,7 @@ server_cmd_3,203.0.113.76,user,2202,,,,,,,,,,,,,,,,,
                 u"""\
 Name,HostName,User,Port,IdentityFile
 *,,,,
+host_1 host_2,%h.test.com,user,2202,
 server1,203.0.113.76,,,
 server_cmd_1,203.0.113.76,,2202,
 server_cmd_2,203.0.113.76,user,22,
@@ -373,6 +384,7 @@ server_cmd_3,203.0.113.76,user,2202,
                 u"""\
 Name,HostName,User,Port,IdentityFile,ServerAliveInterval
 *,,,,,40
+host_1 host_2,%h.test.com,user,2202,,
 server1,203.0.113.76,,,,200
 server_cmd_1,203.0.113.76,,2202,,
 server_cmd_2,203.0.113.76,user,22,,
@@ -388,6 +400,7 @@ server_cmd_3,203.0.113.76,user,2202,,
             self.assertEqual(
                 u"""\
 [linux]
+host_1 host_2       ansible_host=%h.test.com         ansible_user=user      
 server1             ansible_host=203.0.113.76        
 server_cmd_1        ansible_host=203.0.113.76        
 server_cmd_2        ansible_host=203.0.113.76        ansible_user=user      

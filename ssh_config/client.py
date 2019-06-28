@@ -63,7 +63,12 @@ class Host(object):
     ]
 
     def __init__(self, name, attrs):
-        self.name = name
+        if isinstance(name, list):
+            self.__name = name
+        elif isinstance(name, str):
+            self.__name = name.split() 
+        else:
+            raise TypeError
         self.__attrs = dict()
         attrs = {key.upper(): value for key, value in attrs.items()}
         for attr, attr_type in self.attrs:
@@ -89,6 +94,10 @@ class Host(object):
 
     def __getattr__(self, key):
         return self.__attrs.get(key)
+
+    @property
+    def name(self):
+        return " ".join(self.__name)
 
     def update(self, attrs):
         if isinstance(attrs, dict):
@@ -150,7 +159,7 @@ class SSHConfig(object):
         SPACE = White().suppress()
         HOST = CaselessLiteral("Host").suppress()
         KEY = Word(alphanums + "~*._-/")
-        VALUE = Word(alphanums + "~*._-/")
+        VALUE = Word(alphanums + "~*._-/ ")
         paramValueDef = SkipTo("#" | lineEnd)
         indentStack = [1]
 
