@@ -4,7 +4,6 @@ from os.path import join, dirname, exists
 from setuptools import setup
 from setuptools import find_packages
 
-from ssh_config import __version__
 long_description = open(join(dirname(__file__), 'README.md')).read().strip() if exists('README.md') else ''
 install_requires = [
     "pyparsing",
@@ -12,6 +11,8 @@ install_requires = [
     "texttable",
     "Jinja2",
 ]
+
+__version__ = ".".join(map(str, (0, 0, 12)))
 
 setup(
     name="ssh_config",
