@@ -17,7 +17,7 @@ from texttable import Texttable
 
 import ssh_config
 from .client import SSHConfig, Host
-from . import __version__
+from .version import __version__
 
 
 if sys.version_info[0] < 3:
@@ -476,7 +476,7 @@ class SSHConfigDocOpt:
 
 def main(argv=sys.argv):
     SSHConfigDocOpt(
-        argv[1:], options_first=True, version="ssh_config %s" % ssh_config.__version__
+        argv[1:], options_first=True, version="ssh_config %s" % __version__
     )
 
 
