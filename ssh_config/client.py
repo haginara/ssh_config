@@ -125,6 +125,9 @@ class Host(object):
         return "{cmd} {port}{username}{host}".format(
             cmd=cmd, port=port, username=user, host=self.HostName
         )
+    
+    def ansible(self):
+        pass
 
 
 class SSHConfig(object):
