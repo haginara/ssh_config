@@ -29,7 +29,7 @@ $ pip install ssh-config
 Usage
 -----
 ```
-ssh-config 0.0.12
+ssh-config <version>
 
     Usage:
         ssh-config [options] [COMMAND] [ARGS...]
