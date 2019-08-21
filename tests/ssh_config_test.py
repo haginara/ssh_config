@@ -191,12 +191,17 @@ server_cmd_2   203.0.113.76   user   22     None
 server_cmd_3   203.0.113.76   user   2202   None        
 
 """
-        f = StringIO()
-        with redirect_stdout(f):
-            cli.main(["ssh_config", "-f", sample, "ls", "server_*"])
-        output = f.getvalue()
         self.maxDiff = None
-        self.assertEqual(expect, output)
+        with StringIO() as f:
+            with redirect_stdout(f):
+                cli.main(["ssh_config", "-f", sample, "ls", "server_*"])
+            output = f.getvalue()
+            self.assertEqual(expect, output)
+        with StringIO() as f:
+            with redirect_stdout(f):
+                cli.main(["ssh_config", "-f", sample, "ls", "server_"])
+            output = f.getvalue()
+            self.assertEqual(expect, output)
 
     def test_add_error(self):
         self.assertRaises(

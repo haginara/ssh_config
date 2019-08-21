@@ -44,6 +44,77 @@ class NoExistCommand(Exception):
         self.command = command
         self.supercommand = supercommand
 
+def coroutine(func):
+    def start(*args, **kwargs):
+        cr = func(*args, **kwargs)
+        next(cr)
+        return cr
+    return start
+
+@coroutine
+def grep(pattern, target):
+    while True:
+        host = yield
+        if pattern is None or fnmatch.fnmatch(host.name, pattern) or pattern in host.name:
+            target.send(host)
+
+@coroutine
+def simple_print():
+    while True:
+        host = yield
+        print(host.name)
+
+@coroutine
+def field_print(fields):
+    while True:
+        host = yield
+        row = ",".join([getattr(host, field) for field in fields.split(",")])
+        print(row)
+
+@coroutine
+def table_print(verbose=False):
+    ## Print Table
+    table = Texttable(max_width=100)
+    table.set_deco(Texttable.HEADER)
+    header = ["Host", "HostName", "User", "Port", "IdentityFile"]
+    if verbose:
+        table.header(header + ["Others"])
+    else:
+        table.header(header)
+
+    try:
+        while True:
+            host = yield
+            if verbose:
+                others = "\n".join(
+                    [
+                        "%s %s" % (key, value)
+                        for key, value in host.attributes(exclude=header).items()
+                    ]
+                )
+
+                table.add_row(
+                    [
+                        host.name,
+                        host.HostName,
+                        host.User,
+                        host.Port,
+                        host.IdentityFile,
+                        others,
+                    ]
+                )
+            else:
+                table.add_row(
+                    [
+                        host.name,
+                        host.HostName,
+                        host.User,
+                        host.Port,
+                        host.IdentityFile,
+                    ]
+                )
+    except GeneratorExit:
+        print(table.draw() + "\n")
 
 class SSHConfigDocOpt:
     """ssh-config {version}
@@ -60,6 +131,7 @@ class SSHConfigDocOpt:
         ls          Show list of Hosts in client file
         get         Get ssh client config with Name
         add         Add new Host configuration
+        search      Search host configuration
         rm          Remove exist Host configuration
         init        Create ~/.ssh/config file
         import      Import Hosts from csv file to SSH Client config
@@ -93,7 +165,11 @@ class SSHConfigDocOpt:
 
         # options, command_handler, command_options
         try:
-            command_handler(options, command_options)
+            sshconfig = self.get_sshconfig(options.get("--config"), create=False)
+            if sshconfig is None:
+                print("No config exist: %s" % options.get("--config"))
+                return
+            command_handler(sshconfig, options, command_options)
         except Exception as e:
             raise DocoptExit(str(e))
 
@@ -116,7 +192,7 @@ class SSHConfigDocOpt:
             sshconfig = SSHConfig(config)
         return sshconfig
 
-    def init(self, options, command_options):
+    def init(self, sshconfig, options, command_options):
         """
         Init.
         usage: init [options]
@@ -138,7 +214,7 @@ class SSHConfigDocOpt:
             print("Create %s" % ssh_config_path)
             open(ssh_config_path, "w").write("")
 
-    def get(self, options, command_options):
+    def get(self, sshconfig, options, command_options):
         """
         Get hosts.
         usage: get [options] [PATTERN]
@@ -147,18 +223,13 @@ class SSHConfigDocOpt:
             -h --help           Show this screen
         """
         pattern = command_options.get("PATTERN", None)
-        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
-        if sshconfig is None:
-            print("No config exist: %s" % options.get("--config"))
-            return
-
         # Print plain
+        target = grep(pattern, simple_print())
         for host in sshconfig:
-            if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                if host.name != "*":
-                    print(host)
+            if host.name != "*":
+                target.send(host)
 
-    def ls(self, options, command_options):
+    def ls(self, sshconfig, options, command_options):
         """
         List hosts.
         usage: ls [options] [PATTERN]
@@ -169,71 +240,23 @@ class SSHConfigDocOpt:
             -v --verbose            Verbose output
             -h --help               Show this screen
         """
-        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
-        if sshconfig is None:
-            print("No config exist: %s" % options.get("--config"))
-            return
-
         only_name = command_options.get("--only-name")
         fields = command_options.get("--fields") 
         pattern = command_options.get("PATTERN", None)
+        verbose = command_options.get("--verbose")
 
-        # Print plain
         if only_name:
-            for host in sshconfig:
-                if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                    if host.name != "*":
-                        print(host.name)
-            return
+            printer = simple_print()
         elif fields:
-            for host in sshconfig:
-                if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                    if host.name != "*":
-                        row = ",".join([getattr(host, field) for field in fields.split(",")])
-                        print(row)
-            return
-
-        ## Print Table
-        table = Texttable(max_width=100)
-        table.set_deco(Texttable.HEADER)
-        header = ["Host", "HostName", "User", "Port", "IdentityFile"]
-        if command_options.get("--verbose"):
-            table.header(header + ["Others"])
+            printer = field_print(fields)
         else:
-            table.header(header)
+            printer = table_print(verbose)
+
+        target = grep(pattern, printer)
         for host in sshconfig:
-            if pattern is None or fnmatch.fnmatch(host.name, pattern):
-                if command_options.get("--verbose"):
-                    others = "\n".join(
-                        [
-                            "%s %s" % (key, value)
-                            for key, value in host.attributes(exclude=header).items()
-                        ]
-                    )
+            target.send(host)
 
-                    table.add_row(
-                        [
-                            host.name,
-                            host.HostName,
-                            host.User,
-                            host.Port,
-                            host.IdentityFile,
-                            others,
-                        ]
-                    )
-                else:
-                    table.add_row(
-                        [
-                            host.name,
-                            host.HostName,
-                            host.User,
-                            host.Port,
-                            host.IdentityFile,
-                        ]
-                    )
-        print(table.draw() + "\n")
-
-    def add(self, options, command_options):
+    def add(self, sshconfig, options, command_options):
         """
         Add host.
         Usage: add [options] (HOSTNAME) <attribute=value>...
@@ -251,7 +274,6 @@ class SSHConfigDocOpt:
             {{ attr }}
             {% endfor %}
         """
-        sshconfig = self.get_sshconfig(options.get("--config"))
         verbose = command_options.get("--verbose")
         hostname = command_options.get("HOSTNAME")
         attrs = command_options.get("<attribute=value>", [])
@@ -297,7 +319,7 @@ class SSHConfigDocOpt:
         ):
             sshconfig.write()
 
-    def rm(self, options, command_options):
+    def rm(self, sshconfig, options, command_options):
         """
         Remove Host.
         Usage: rm [options] (HOSTNAME)
@@ -307,7 +329,6 @@ class SSHConfigDocOpt:
             -y --yes        Force answer yes
             -h --help       Show this screen
         """
-        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
         verbose = command_options.get("--verbose")
         hostname = command_options.get("HOSTNAME")
         host = sshconfig.get(hostname, raise_exception=False)
@@ -322,7 +343,7 @@ class SSHConfigDocOpt:
         ):
             sshconfig.write()
 
-    def _import(self, options, command_options):
+    def _import(self, sshconfig, options, command_options):
         """
         Import hosts.
         Usage: import [options] (FILE)
@@ -333,7 +354,6 @@ class SSHConfigDocOpt:
             -y --yes        Force answer yes
             -h --help       Show this screen
         """
-        sshconfig = self.get_sshconfig(options.get("--config"), create=True)
         queit = command_options.get("--quiet")
         csv_file = command_options.get("FILE")
         if not csv_file or not os.path.exists(csv_file):
@@ -360,7 +380,7 @@ class SSHConfigDocOpt:
         ):
             sshconfig.write()
 
-    def export(self, options, command_options):
+    def export(self, sshconfig, options, command_options):
         """
         Export hosts.
         Usage: export [options] ([FORMAT] <file> | <file>)
@@ -377,10 +397,6 @@ class SSHConfigDocOpt:
         Format:
             csv [default]
         """
-        sshconfig = self.get_sshconfig(options.get("--config"), create=False)
-        if sshconfig is None:
-            print("No config exist: %s" % options.get("--config"))
-            return
         quiet = command_options.get("--quiet")
         verbose = command_options.get("--verbose")
         essential = command_options.get("-x")
@@ -440,7 +456,7 @@ class SSHConfigDocOpt:
                         print(line)
                     f.write("%s\n" % line)
 
-    def bastion(self, options, command_options):
+    def bastion(self, sshconfig, options, command_options):
         """
         Manage Bastion hosts
         Usage: bastion [options] <bastion> <server>...
@@ -450,7 +466,6 @@ class SSHConfigDocOpt:
             -v --verbose        Verbose output
             -y --yes            Forcily yes
         """
-        sshconfig = self.get_sshconfig(options.get("--config"))
         verbose = command_options.get("--verbose")
         bastion = command_options.get("<bastion>")
         servers = command_options.get("<server>", [])
