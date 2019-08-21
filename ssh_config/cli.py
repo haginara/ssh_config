@@ -125,15 +125,15 @@ class SSHConfigDocOpt:
     Options:
         -h --help           Show this screen.
         -v --version        Show version.
+        -V --verbose        Verbose output
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
         
     Commands:
         ls          Show list of Hosts in client file
         get         Get ssh client config with Name
         add         Add new Host configuration
-        search      Search host configuration
+        update      Update host configuration
         rm          Remove exist Host configuration
-        init        Create ~/.ssh/config file
         import      Import Hosts from csv file to SSH Client config
         export      Export Hosts to csv format
         bastion     Bastion register/use
@@ -191,28 +191,6 @@ class SSHConfigDocOpt:
                 print("Created!")
             sshconfig = SSHConfig(config)
         return sshconfig
-
-    def init(self, sshconfig, options, command_options):
-        """
-        Init.
-        usage: init [options]
-
-        Options:
-            -y --yes        Force answer yes
-            -h --help       Show this screen
-        """
-        ssh_config_folder = os.path.expanduser("~/.ssh/")
-        ssh_config_path = os.path.join(ssh_config_folder, "config")
-        if not os.path.exists(ssh_config_folder):
-            os.mkdir(ssh_config_folder)
-
-        if (
-            not os.path.exists(ssh_config_path)
-            or command_options.get("--yes")
-            or input_is_yes("~/.ssh/config exists, do you want to wipe it")
-        ):
-            print("Create %s" % ssh_config_path)
-            open(ssh_config_path, "w").write("")
 
     def get(self, sshconfig, options, command_options):
         """
