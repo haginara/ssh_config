@@ -14,3 +14,7 @@ HosT server_cmd_3
     hostname 203.0.113.76
     port 2202
     User user
+Host host_1 host_2
+    hostname %h.test.com
+    port 2202
+    User user
