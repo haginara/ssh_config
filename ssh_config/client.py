@@ -159,15 +159,17 @@ class SSHConfig(object):
     def parse(self, data=""):
         if data:
             self.raw = data
+
         SPACE = White().suppress()
+        SEP = Suppress(SPACE) | Suppress("=")
         HOST = CaselessLiteral("Host").suppress()
-        KEY = Word(alphanums + "~*._-/")
-        VALUE = Word(alphanums + " ~%*?!._-+=/,")
+        KEY = Word(alphanums)
+        VALUE = Word(alphanums + " ~%*?!._-+/,")
         paramValueDef = SkipTo("#" | lineEnd)
         indentStack = [1]
 
-        HostDecl = HOST + SPACE + VALUE
-        paramDef = Dict(Group(KEY + SPACE + paramValueDef))
+        HostDecl = HOST + SEP + VALUE
+        paramDef = Dict(Group(KEY + SEP + paramValueDef))
         block = indentedBlock(paramDef, indentStack)
         HostBlock = Dict(Group(HostDecl + block))
         try:
