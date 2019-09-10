@@ -406,8 +406,7 @@ server_cmd_3,203.0.113.76,user,2202,,
             self.assertEqual(
                 u"""\
 [linux]
-host_1              ansible_host=host_1.test.com     ansible_user=user      
-host_2              ansible_host=host_2.test.com     ansible_user=user      
+host_1 host_2       ansible_host=%h.test.com         ansible_user=user      
 server1             ansible_host=203.0.113.76        
 server_cmd_1        ansible_host=203.0.113.76        
 server_cmd_2        ansible_host=203.0.113.76        ansible_user=user      

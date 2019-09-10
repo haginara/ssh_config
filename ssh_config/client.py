@@ -162,7 +162,7 @@ class SSHConfig(object):
         SPACE = White().suppress()
         HOST = CaselessLiteral("Host").suppress()
         KEY = Word(alphanums + "~*._-/")
-        VALUE = Word(alphanums + SPACE + "~%*._-+=/,")
+        VALUE = Word(alphanums + " ~%*?!._-+=/,")
         paramValueDef = SkipTo("#" | lineEnd)
         indentStack = [1]
 
