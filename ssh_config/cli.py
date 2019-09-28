@@ -37,6 +37,9 @@ def input_is_yes(msg, default="n"):
     return False
 
 
+class AurgmentRequired(Exception):
+    pass
+
 class NoExistCommand(Exception):
     def __init__(self, command, supercommand):
         super().__init__("No Exist Command: %s" % command)
@@ -55,7 +58,9 @@ def coroutine(func):
 def grep(pattern, target):
     while True:
         host = yield
-        if pattern is None or fnmatch.fnmatch(host.name, pattern) or pattern in host.name:
+        name = host.name
+        hostname = str(host.HostName)
+        if pattern is None or fnmatch.fnmatch(host.name, pattern) or pattern in name or pattern in hostname:
             target.send(host)
 
 @coroutine
@@ -201,11 +206,12 @@ class SSHConfigDocOpt:
             -h --help           Show this screen
         """
         pattern = command_options.get("PATTERN", None)
+        if pattern is None:
+            raise AurgmentRequired
         # Print plain
-        target = grep(pattern, simple_print())
+        target = grep(pattern, table_print())
         for host in sshconfig:
-            if host.name != "*":
-                target.send(host)
+            target.send(host)
 
     def ls(self, sshconfig, options, command_options):
         """
