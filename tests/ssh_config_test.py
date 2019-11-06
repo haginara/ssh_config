@@ -4,13 +4,10 @@ import shutil
 import logging
 import unittest
 
-if sys.version_info[0] < 3:
-    from StringIO import StringIO
-else:
-    from io import StringIO
+from io import StringIO
 
 import docopt
-from contextlib2 import redirect_stdout
+from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host

@@ -191,12 +191,13 @@ class SSHConfig(object):
         SPACE = White().suppress()
         SEP = Suppress(SPACE) | Suppress("=")
         HOST = CaselessLiteral("Host").suppress()
+        MATCH = CaselessLiteral("Match").suppress()
         KEY = Word(alphanums)
         VALUE = Word(alphanums + ' ~%*?!._-+/,"')
         paramValueDef = SkipTo("#" | lineEnd)
         indentStack = [1]
 
-        HostDecl = HOST + SEP + VALUE
+        HostDecl = (HOST | MATCH ) + SEP + VALUE
         paramDef = Dict(Group(KEY + SEP + paramValueDef))
         block = indentedBlock(paramDef, indentStack)
         HostBlock = Dict(Group(HostDecl + block))
