@@ -18,6 +18,7 @@ Yes, I am not sure this is eaiser way to handle it. but I am trying.
 
 Requirements
 ------------
+After 0.0.15, Python27 is not supported.
 Python 2.7, 3.6, 3.7
 
 Installation
