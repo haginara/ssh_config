@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import
 import os
 import logging
 import subprocess  # call
+from typing import List, Dict, Any
 from pyparsing import (
     Literal,
     CaselessLiteral,
@@ -106,6 +107,9 @@ class Host(object):
         elif include:
             return {key: self.__attrs[key] for key in self.__attrs if key in include}
         return self.__attrs
+    
+    def __repr__(self) -> str:
+        return f"Host<{self.name}>"
 
     def __str__(self):
         data = "Host %s\n" % self.name
@@ -129,10 +133,10 @@ class Host(object):
     def get(self, key, default=None):
         return self.__attrs.get(key, default)
 
-    def set(self, key, value):
+    def set(self, key: str, value):
         self.__attrs[key] = value
 
-    def command(self, cmd="ssh"):
+    def command(self, cmd: str="ssh"):
         if self.Port and self.Port != 22:
             port = "-p {port} ".format(port=self.Port)
         else:
@@ -152,13 +156,16 @@ class Host(object):
 
 
 class SSHConfig(object):
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.__path = path
         self.__hosts = []
         self.raw = None
+    
+    def __repr__(self) -> str:
+        return f"SSHConfig<Path:{self.__path}>"
 
     @classmethod
-    def load(cls, config_path):
+    def load(cls, config_path: str):
         logger.debug("Load: %s" % config_path)
         ssh_config = cls(config_path)
 
@@ -177,7 +184,7 @@ class SSHConfig(object):
             ssh_config.append(Host(name, attrs))
         return ssh_config
 
-    def parse(self, data=""):
+    def parse(self, data: str=""):
         if data:
             self.raw = data
 
@@ -205,19 +212,19 @@ class SSHConfig(object):
     def __next__(self):
         return self.__hosts.next()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         return self.__hosts[idx]
 
     def hosts(self):
         return self.__hosts
 
-    def update(self, name, attrs):
+    def update(self, name: str, attrs: Dict):
         for idx, host in enumerate(self.__hosts):
             if name == host.name:
                 host.update(attrs)
                 self.__hosts[idx] = host
 
-    def get(self, name, raise_exception=True):
+    def get(self, name: str, raise_exception=True):
         for host in self.__hosts:
             if host.name == name:
                 return host
@@ -225,19 +232,19 @@ class SSHConfig(object):
             raise KeyError
         return None
 
-    def append(self, host):
+    def append(self, host: Host):
         if not isinstance(host, Host):
             raise TypeError
         self.__hosts.append(host)
 
-    def remove(self, name):
+    def remove(self, name: str) -> bool:
         host = self.get(name, raise_exception=False)
         if host:
             self.__hosts.remove(host)
             return True
         return False
 
-    def write(self, filename=""):
+    def write(self, filename: str="") -> str:
         if filename:
             self.__path = filename
         with open(self.__path, "w") as f:
@@ -247,5 +254,5 @@ class SSHConfig(object):
                     f.write("    %s %s\n" % (attr, host.get(attr)))
         return self.__path
 
-    def asdict(self):
+    def asdict(self) -> Dict:
         return {host.name: host.attributes() for host in self.__hosts}
