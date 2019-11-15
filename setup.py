@@ -30,7 +30,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'ssh-config=ssh_config.cli:main',
+            'ssh-config=ssh_config.cli2:main',
         ]
     },
     packages=find_packages(),
