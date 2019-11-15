@@ -73,6 +73,7 @@ class Host(object):
         ("LocalForward", str),
         ("LogLevel", str),
         ("ProxyCommand", str),
+        ("ProxyJump", str),
         ("Match", str),
         ("AddKeysToAgent", str),
         ("BindInterface", str),
