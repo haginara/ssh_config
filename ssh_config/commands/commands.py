@@ -2,6 +2,7 @@ import os
 import csv
 import fnmatch
 
+from jinja2 import Template
 
 from ..client import Host
 
@@ -78,6 +79,9 @@ class Add(BaseCommand):
         {{ attr }}
         {% endfor %}
     """
+    def pre_command(self):
+        template = Template(self.__doc__, trim_blocks=True, lstrip_blocks=True)
+        self.__doc__ = template.render(attrs=Host.attrs)
 
     def execute(self):
         verbose = self.options.get("--verbose")
@@ -127,6 +131,9 @@ class Update(BaseCommand):
         {{ attr }}
         {% endfor %}
     """
+    def pre_command(self):
+        template = Template(self.__doc__, trim_blocks=True, lstrip_blocks=True)
+        self.__doc__ = template.render(attrs=Host.attrs)
 
     def execute(self):
         verbose = self.options.get("--verbose")

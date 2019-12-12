@@ -24,11 +24,17 @@ class BaseCommand(object):
     def __init__(self, config, options, g_options, options_first=False):
         if not self.__doc__:
             raise NoDocExist
+        self.pre_command()
         self.config = config
         self.options = docopt.docopt(
             self.__doc__, argv=options, options_first=options_first
         )
         self.g_options = g_options
+
+    def pre_command(self):
+        """ Pre command function before parse options
+        """
+        pass
 
     def execute(self):
         """Execute Command"""

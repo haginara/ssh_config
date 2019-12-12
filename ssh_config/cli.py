@@ -14,7 +14,6 @@ from functools import partial
 
 from docopt import docopt
 from docopt import DocoptExit
-from jinja2 import Template
 from texttable import Texttable
 
 import ssh_config
