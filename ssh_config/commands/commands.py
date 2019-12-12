@@ -108,7 +108,7 @@ class Add(BaseCommand):
             host = self.config.get(hostname, raise_exception=False)
             if self.options.get("--update"):
                 if not host:
-                    print("No host to be updated, %s" % hostname)
+                    print(f"No host to be updated, {hostname}")
                 if verbose:
                     print("Update attributes: %s" % attrs)
                 self.config.update(hostname, attrs)
@@ -122,10 +122,69 @@ class Add(BaseCommand):
         if self.options.get("--verbose"):
             print("%s" % host)
         if self.options.get("--yes") or input_is_yes(
-            "Do you want to save it", classault="n"
+            "Do you want to save it", default="n"
         ):
             self.config.write()
 
+
+class Update(BaseCommand):
+    """Update host.
+
+    Usage: update [options] <HOSTNAME> <attribute=value>...
+
+    Arguments:
+        HOSTNAME target hostname
+
+    Options:
+        -p --use-pattern    Use pattern to find hosts
+        -y --yes            Force answer yes
+        -v --verbose        Verbose Output
+        -h --help           Shwo this screen
+
+    Attributes:
+        {% for attr, attr_type in attrs %}
+        {{ attr }}
+        {% endfor %}
+    """
+
+    def execute(self):
+        verbose = self.options.get("--verbose")
+        hostname = self.options.get("<HOSTNAME>")
+        attrs = self.options.get("<attribute=value>", [])
+        is_bastion = self.options.get("--bastion")
+        try:
+            attrs = {
+                attr.split("=")[0]: attr.split("=")[1]
+                for attr in self.options.get("<attribute=value>", [])
+            }
+        except Exception as e:
+            raise Exception(f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}")
+        use_pattern = self.options.get("--use-pattern")
+        if use_pattern:
+            """ use-pattern is only accept update, not add """
+            hosts = [
+                host for host in self.config if fnmatch.fnmatch(host.name, hostname)
+            ]
+            if hosts:
+                for host in hosts:
+                    self.config.update(host.name, attrs)
+                    print(f"{host}")
+            else:
+                print("No hosts found")
+                return
+        else:
+            host = self.config.get(hostname, raise_exception=False)
+            if not host:
+                print("No host to be updated, %s" % hostname)
+            if verbose:
+                print("Update attributes: %s" % attrs)
+            self.config.update(hostname, attrs)
+
+        print(f"{host}")
+        if self.options.get("--yes") or input_is_yes(
+            "Do you want to save it", default="n"
+        ):
+            self.config.write()
 
 class Rm(BaseCommand):
     """Remove Host.
@@ -148,7 +207,7 @@ class Rm(BaseCommand):
             print("%s" % host)
         self.config.remove(hostname)
         if self.options.get("--yes") or input_is_yes(
-            "Do you want to remove %s" % hostname, classault="n"
+            "Do you want to remove %s" % hostname, default="n"
         ):
             self.config.write()
 
@@ -187,7 +246,7 @@ class Import(BaseCommand):
                     print("Import: %s, %s" % (host.name, host.HostName))
 
         if self.options.get("--yes") or input_is_yes(
-            "Do you want to save it", classault="n"
+            "Do you want to save it", default="n"
         ):
             self.config.write()
 
@@ -206,7 +265,7 @@ class Export(BaseCommand):
         -y --yes            Forcily yes
     
     Format:
-        csv [classault]
+        csv [default]
     """
 
     def execute(self):
@@ -220,7 +279,7 @@ class Export(BaseCommand):
         if os.path.exists(outfile):
             print("%s exists." % outfile)
             if not self.options.get("--yes") and not input_is_yes(
-                "Do you want to overwrite it", classault="n"
+                "Do you want to overwrite it", default="n"
             ):
                 return
 
@@ -296,7 +355,7 @@ class Bastion(BaseCommand):
                 return
             if host.get("ProxyCommand", None):
                 if not self.options.get("--yes") and not input_is_yes(
-                    "%s has ProxyComamnd, %s" % (host, host.ProxyCommand), classault="n"
+                    "%s has ProxyComamnd, %s" % (host, host.ProxyCommand), default="n"
                 ):
                     return
             host.set("ProxyCommand", "ProxyCommand ssh -q -A bastion -W %h:%p")

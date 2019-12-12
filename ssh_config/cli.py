@@ -19,7 +19,7 @@ from texttable import Texttable
 
 import ssh_config
 import importlib
-from . import commands
+from .commands import commands
 from .commands.utils import input_is_yes
 from .client import SSHConfig, Host
 from .version import __version__
