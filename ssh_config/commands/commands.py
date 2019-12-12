@@ -62,15 +62,16 @@ class Ls(BaseCommand):
 class Add(BaseCommand):
     """Add host.
 
-    Usage: add [options] (HOSTNAME) <attribute=value>...
+    Usage: add [options] <HOSTNAME> <attribute=value>...
+
+    Arguments:
+        HOSTNAME Host name
 
     Options:
-        --update            If host exists, update it.
-        -b --bastion        Add attributes for Bastion host
-        -p --use-pattern    Use pattern to find hosts
-        -y --yes            Force answer yes
-        -v --verbose        Verbose Output
-        -h --help           Shwo this screen
+        -b,--bastion        Add attributes for Bastion host
+        -y,--yes            Force answer yes
+        -v,--verbose        Verbose Output
+        -h,--help           Shwo this screen
 
     Attributes:
         {% for attr, attr_type in attrs %}
@@ -80,7 +81,7 @@ class Add(BaseCommand):
 
     def execute(self):
         verbose = self.options.get("--verbose")
-        hostname = self.options.get("HOSTNAME")
+        hostname = self.options.get("<HOSTNAME>")
         attrs = self.options.get("<attribute=value>", [])
         is_bastion = self.options.get("--bastion")
         try:
@@ -92,35 +93,15 @@ class Add(BaseCommand):
             raise Exception(f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}")
         if is_bastion:
             attrs.update({"ProxyCommand": "none", "ForwardAgent": "yes"})
-        use_pattern = self.options.get("--use-pattern")
-        if use_pattern:
-            """ use-pattern is only accept update, not add """
-            hosts = [
-                host for host in self.config if fnmatch.fnmatch(host.name, hostname)
-            ]
-            if hosts:
-                for host in hosts:
-                    self.config.update(host.name, attrs)
-            else:
-                print("No hosts found")
-                return
-        else:
-            host = self.config.get(hostname, raise_exception=False)
-            if self.options.get("--update"):
-                if not host:
-                    print(f"No host to be updated, {hostname}")
-                if verbose:
-                    print("Update attributes: %s" % attrs)
-                self.config.update(hostname, attrs)
-            else:
-                if host:
-                    print("%s host already exist" % hostname)
-                    return
-                host = Host(hostname, attrs)
-                self.config.append(host)
 
-        if self.options.get("--verbose"):
-            print("%s" % host)
+        host = self.config.get(hostname, raise_exception=False)
+        if host:
+            print("%s host already exist" % hostname)
+            return
+        host = Host(hostname, attrs)
+        self.config.append(host)
+
+        print(f"{host}")
         if self.options.get("--yes") or input_is_yes(
             "Do you want to save it", default="n"
         ):
