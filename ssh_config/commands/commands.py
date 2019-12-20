@@ -8,7 +8,7 @@ from ..client import Host
 
 from .base import BaseCommand
 from .base import ArgumentRequired
-from .utils import table_print, simple_print, field_print, grep, input_is_yes
+from .utils import table_print, simple_print, field_print, ssh_format_print, grep, input_is_yes
 
 
 class Get(BaseCommand):
@@ -38,8 +38,9 @@ class Ls(BaseCommand):
     Options:
         --only-name             Print name only
         --fields [FIELD...]     Print selected fields, fielda are spliited by ','
-        -v --verbose            Verbose output
-        -h --help               Show this screen
+        -v, --verbose           Verbose output
+        -s, --ssh-format        Print ssh-login format
+        -h, --help              Show this screen
     """
 
     def execute(self):
@@ -47,11 +48,14 @@ class Ls(BaseCommand):
         fields = self.options.get("--fields")
         pattern = self.options.get("PATTERN", None)
         verbose = self.options.get("--verbose")
+        ssh_format = self.options.get("--ssh-format")
 
         if only_name:
             printer = simple_print()
         elif fields:
             printer = field_print(fields)
+        if ssh_format:
+            printer = ssh_format_print()
         else:
             printer = table_print(verbose)
 

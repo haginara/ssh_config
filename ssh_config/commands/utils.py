@@ -50,6 +50,17 @@ def simple_print():
         host = yield
         print(host.name)
 
+@coroutine
+def ssh_format_print():
+    while True:
+        host = yield
+        line = "ssh"
+        if host.IdentityFile:
+            line += f" -i {host.IdentityFile}"
+        if host.Port and host.Port != 22:
+            line += f" -p {host.Port}"
+        line += f" {host.User}@{host.HostName}"
+        print(f"{host.name:<30s} | {line}")
 
 @coroutine
 def field_print(fields):
