@@ -40,6 +40,7 @@ class SSHConfigDocOpt:
         get         Get ssh client config with Name
         add         Add new Host configuration
         update      Update host configuration
+        rename      Update host configuration
         rm          Remove exist Host configuration
         import      Import Hosts from csv file to SSH Client config
         export      Export Hosts to csv format

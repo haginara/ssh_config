@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 import os
 import logging
 import subprocess  # call
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union
 from pyparsing import (
     Literal,
     CaselessLiteral,
@@ -15,7 +15,7 @@ from pyparsing import (
     Forward,
     Group,
     SkipTo,
-    Optional,
+    #Optional,
     OneOrMore,
     ZeroOrMore,
     pythonStyleComment,
@@ -86,17 +86,20 @@ class Host(object):
     ]
 
     def __init__(self, name, attrs):
+        self.set_name(name)
+        self.__attrs = dict()
+        attrs = {key.upper(): value for key, value in attrs.items()}
+        for attr, attr_type in self.attrs:
+            if attrs.get(attr.upper()):
+                self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
+
+    def set_name(self, name: Union[List[str], str]):
         if isinstance(name, list):
             self.__name = name
         elif isinstance(name, str):
             self.__name = name.split() 
         else:
             raise TypeError
-        self.__attrs = dict()
-        attrs = {key.upper(): value for key, value in attrs.items()}
-        for attr, attr_type in self.attrs:
-            if attrs.get(attr.upper()):
-                self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
 
     def attributes(self, exclude=[], include=[]):
         if exclude and include:
@@ -109,7 +112,7 @@ class Host(object):
             return {key: self.__attrs[key] for key in self.__attrs if key in include}
         return self.__attrs
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"Host<{self.name}>"
 
     def __str__(self):
@@ -125,19 +128,19 @@ class Host(object):
     def name(self):
         return " ".join(self.__name)
 
-    def update(self, attrs):
+    def update(self, attrs: Dict):
         if isinstance(attrs, dict):
             self.__attrs.update(attrs)
             return self
         raise AttributeError
 
-    def get(self, key, default=None):
+    def get(self, key, default=None) -> Any:
         return self.__attrs.get(key, default)
 
-    def set(self, key: str, value):
+    def set(self, key: str, value: Any):
         self.__attrs[key] = value
 
-    def command(self, cmd: str="ssh"):
+    def command(self, cmd: str="ssh") -> str:
         if self.Port and self.Port != 22:
             port = "-p {port} ".format(port=self.Port)
         else:
@@ -157,6 +160,8 @@ class Host(object):
 
 
 class SSHConfig(object):
+    """
+    """
     def __init__(self, path: str):
         self.__path = path
         self.__hosts = []
@@ -167,6 +172,8 @@ class SSHConfig(object):
 
     @classmethod
     def load(cls, config_path: str):
+        """ Load ssh-config file with path
+        """
         logger.debug("Load: %s" % config_path)
         ssh_config = cls(config_path)
 
@@ -185,7 +192,9 @@ class SSHConfig(object):
             ssh_config.append(Host(name, attrs))
         return ssh_config
 
-    def parse(self, data: str=""):
+    def parse(self, data: str="") -> Optional[Dict]:
+        """ parse ssh-config data
+        """
         if data:
             self.raw = data
 
@@ -206,7 +215,7 @@ class SSHConfig(object):
             return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
         except ParseException as e:
             print(e)
-            return None
+        return None
 
     def __iter__(self):
         return self.__hosts.__iter__()
@@ -225,10 +234,18 @@ class SSHConfig(object):
             if name == host.name:
                 host.update(attrs)
                 self.__hosts[idx] = host
+                break
+
+    def rename(self, name: str, new_name: str):
+        for idx, host in enumerate(self.__hosts):
+            if name == host.name:
+                host.setname(new_name)
+                self.__hosts[idx] = host
+                break
 
     def get(self, name: str, raise_exception=True):
         for host in self.__hosts:
-            if host.name == name:
+            if name == host.name:
                 return host
         if raise_exception:
             raise KeyError

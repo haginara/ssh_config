@@ -178,6 +178,34 @@ class Update(BaseCommand):
         ):
             self.config.write()
 
+class Rename(BaseCommand):
+    """Rename host.
+
+    Usage: rename [options] <OLD_HOSTNAME> <NEW_HOSTNAME>
+
+    Arguments:
+        OLD_HOSTNAME NEW_HOSTNAME
+
+    Options:
+        -y --yes            Force answer yes
+        -v --verbose        Verbose Output
+        -h --help           Shwo this screen
+    """
+    def execute(self):
+        verbose = self.options.get("--verbose")
+        old_hostname = self.options.get("<OLD_HOSTNAME>")
+        new_hostname = self.options.get("<NEW_HOSTNAME>")
+        host = self.config.get(old_hostname, raise_exception=False)
+        if not host:
+            print("No host to be updated, %s" % hostname)
+        host.set_name(new_hostname)
+        self.config.rename(old_hostname, new_hostname)
+
+        print(f"{host}")
+        if self.options.get("--yes") or input_is_yes(
+            "Do you want to save it", default="n"
+        ):
+            self.config.write()
 class Rm(BaseCommand):
     """Remove Host.
     Usage: rm [options] (HOSTNAME)
