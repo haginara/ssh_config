@@ -83,6 +83,7 @@ class Host(object):
         ("PreferredAuthentications", str),
         ("ServerAliveInterval", int),
         ("UsePrivilegedPort", str), # yes, no
+        ("TCPKeepAlive", str), # yes, no
     ]
 
     def __init__(self, name, attrs):
