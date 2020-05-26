@@ -10,7 +10,7 @@ from texttable import Texttable
 def input_is_yes(msg, default="n"):
     if default not in ["y", "n"]:
         raise Exception("Only accept 'y' or 'n'")
-    if default is "n":
+    if default == "n":
         msg += " [yN]? "
     else:
         msg += " [Yn]? "

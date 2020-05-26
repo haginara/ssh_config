@@ -36,6 +36,7 @@ class SSHConfigDocOpt:
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
         
     Commands:
+        gen         Generate ssh config file
         ls          Show list of Hosts in client file
         get         Get ssh client config with Name
         add         Add new Host configuration
@@ -62,12 +63,8 @@ class SSHConfigDocOpt:
         command_name = options["<command>"].title()
         command_options = options.get("<args>")
         config_path = options.get("--config")
-
-        sshconfig = self.get_sshconfig(config_path, create=False)
-        if sshconfig is None:
-            print(f"No config exist: {config_path}")
-            return
-
+        expanded_config_path = os.path.expanduser(config_path).replace("\\", "/")
+        sshconfig = self.get_sshconfig(config_path, create=True)
         #command_cls = importlib.import_module(f".commands.{command_name}")
         command_cls = getattr(commands, command_name)
         command = command_cls(sshconfig, command_options, options)
