@@ -82,6 +82,7 @@ class Host(object):
         ("IdentityAgent", str),
         ("PreferredAuthentications", str),
         ("ServerAliveInterval", int),
+        ("ServerAliveCountMax", int),        
         ("UsePrivilegedPort", str), # yes, no
         ("TCPKeepAlive", str), # yes, no
     ]
