@@ -46,6 +46,7 @@ class SSHConfigDocOpt:
         import      Import Hosts from csv file to SSH Client config
         export      Export Hosts to csv format
         bastion     Bastion register/use
+        ping        Send ping to selected host
         version     Show version information
     """
 

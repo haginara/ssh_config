@@ -2,6 +2,7 @@ import os
 import csv
 import fnmatch
 
+from subprocess import run
 from jinja2 import Template
 
 from ..client import Host
@@ -348,6 +349,23 @@ class Export(BaseCommand):
                         print(line)
                     f.write("%s\n" % line)
 
+
+class Ping(BaseCommand):
+    """Send ping to host.
+
+    usage: get [options] [HOST]
+
+    Options:
+        -h --help           Show this screen
+    """
+
+    def execute(self):
+        host = self.options.get("HOST", None)
+        if host is None:
+            raise ArgumentRequired
+        # Print plain
+        run(args=['ping', '-t', '4', self.config.get(host).HostName])
+            
 
 class Bastion(BaseCommand):
     """Manage Bastion hosts
