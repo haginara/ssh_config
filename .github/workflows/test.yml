@@ -1,4 +1,4 @@
-name: ssh-config
+name: ssh-config Test
 
 on:
   push:
