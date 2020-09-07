@@ -2,7 +2,7 @@ import docopt
 import inspect
 
 
-class NoDocExit(Exception):
+class NoDocExist(Exception):
     pass
 
 

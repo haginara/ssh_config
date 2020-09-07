@@ -200,7 +200,7 @@ class Rename(BaseCommand):
         new_hostname = self.options.get("<NEW_HOSTNAME>")
         host = self.config.get(old_hostname, raise_exception=False)
         if not host:
-            print("No host to be updated, %s" % hostname)
+            print(f"No host to be updated, {old_hostname}")
         host.set_name(new_hostname)
         self.config.rename(old_hostname, new_hostname)
 
