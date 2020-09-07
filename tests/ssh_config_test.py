@@ -198,7 +198,7 @@ server_cmd_3   203.0.113.76   user   2202   None
 
     def test_add_error(self):
         self.assertRaises(
-            docopt.DocoptExit, cli.main, ["ssh_config", "add", "test_add"]
+            docopt.DocoptExit, cli.main, ["ssh_config", "-f", "./tests/sample", "add", "test_add"]
         )
 
     def test_add(self):
