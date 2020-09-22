@@ -1,5 +1,7 @@
 import os
+import stat
 import csv
+import platform
 import fnmatch
 
 from subprocess import run
@@ -12,6 +14,19 @@ from .base import ArgumentRequired
 from .utils import table_print, simple_print, field_print, ssh_format_print, grep, input_is_yes
 
 
+class Gen(BaseCommand):
+    """Generate empty ssh-config file
+
+    usage: gen
+
+    Options:
+        -h --help           Show this screen
+    """
+
+    def execute(self):
+        open(config, "w").close()
+        os.chmod(config, stat.S_IREAD | stat.S_IWRITE)
+        print("Created!")
 
 
 class Get(BaseCommand):
@@ -364,7 +379,10 @@ class Ping(BaseCommand):
         if host is None:
             raise ArgumentRequired
         # Print plain
-        run(args=['ping', '-t', '4', self.config.get(host).HostName])
+        if platform.system() == 'Windows':
+            run(args=['ping', self.config.get(host).HostName])
+        else:
+            run(args=['ping', '-t', '4', self.config.get(host).HostName])
             
 
 class Bastion(BaseCommand):

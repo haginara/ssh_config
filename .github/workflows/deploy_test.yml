@@ -1,9 +1,10 @@
 name: Upload ssh-config to test.pypi
 
 on:
-  create:
-    tags:
-      - v*
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
@@ -25,5 +26,5 @@ jobs:
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.pypi_password }}
-        repository_url: https://pypi.org/legacy/
+        password: ${{ secrets.test_pypi_password }}
+        repository_url: https://test.pypi.org/legacy/

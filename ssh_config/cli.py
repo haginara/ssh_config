@@ -2,6 +2,7 @@
 
 from __future__ import print_function, absolute_import
 import os
+import stat
 import sys
 import csv
 import abc
@@ -64,7 +65,7 @@ class SSHConfigDocOpt:
         command_options = options.get("<args>")
         config_path = options.get("--config")
         expanded_config_path = os.path.expanduser(config_path).replace("\\", "/")
-        sshconfig = self.get_sshconfig(config_path, create=True)
+        sshconfig = self.get_sshconfig(config_path, create=False)
         #command_cls = importlib.import_module(f".commands.{command_name}")
         command_cls = getattr(commands, command_name)
         command = command_cls(sshconfig, command_options, options)
@@ -80,11 +81,12 @@ class SSHConfigDocOpt:
                 sshconfig = SSHConfig(config)
         elif create:
             answer = input_is_yes(
-                "%s does not exists, Do you want to create new one" % config,
+                f"{config} does not exists, Do you want to create new one",
                 default="n",
             )
             if answer:
                 open(config, "w").close()
+                os.chmod(config, stat.S_IREAD | stat.S_IWRITE)
                 print("Created!")
             sshconfig = SSHConfig(config)
         return sshconfig
