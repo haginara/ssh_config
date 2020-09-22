@@ -1,4 +1,5 @@
 import os
+import sys
 import stat
 import csv
 import platform
@@ -290,7 +291,7 @@ class Import(BaseCommand):
 
 class Export(BaseCommand):
     """Export hosts.
-    Usage: export [options] ([FORMAT] <file> | <file>)
+    Usage: export [options] ([FORMAT] <file> | [FORMAT] | <file> )
 
     Options:
         -x                  Export only essential fields
@@ -304,7 +305,7 @@ class Export(BaseCommand):
         csv [default]
     """
 
-    def export_csv(self, fobj, fields, essential=False):
+    def export_csv(self, fields, essential=False):
         """Export csv file
         """
         if essential:
@@ -317,13 +318,14 @@ class Export(BaseCommand):
         writer = csv.DictWriter(
             fobj, fieldnames=["Name"] + header, lineterminator="\n"
         )
-        writer.writeheader()
+        data = f"{','.join(['name'] + header)}\n"
         for host in self.config:
             row = {"Name": host.name}
             row.update(host.attributes(include=header))
-            writer.writerow(row)
+            data += f"{','.join([value for value in row.values()])}\n"
+        return data
 
-    def export_ansible(self, fobj, group, verbose=False):
+    def export_ansible(self, group):
         """Export Ansible inventory
 
         in INI
@@ -334,21 +336,20 @@ class Export(BaseCommand):
                 ansible_port: 5555
                 ansible_host: 192.0.2.50
         """
+        data = ""
         if group:
-            fobj.write("[%s]\n" % group)
+            data += f"[{group}]\n"
+
         for host in self.config:
-            if host.name == "*":
+            if host.name == "*" or host.HostName is None:
                 continue
-            line = "{:<20}ansible_host={:<20}".format(host.name, host.HostName)
+            line = "{:<20} ansible_host={:<20}".format(host.name, host.HostName)
             if host.User:
-                line += "ansible_user={:<10}".format(host.User)
+                line += " ansible_user={:<10}".format(host.User)
             if host.IdentityFile:
-                line += "ansible_ssh_private_key_file={:<20}".format(
-                    os.path.expanduser(host.IdentityFile)
-                )
-            if verbose:
-                print(line)
-            fobj.write("%s\n" % line)
+                line += " ansible_ssh_private_key_file={:<20}".format(host.IdentityFile)
+            data += f"{line}\n"
+        return data
 
     def execute(self):
         verbose = self.options.get("--verbose")
@@ -357,18 +358,23 @@ class Export(BaseCommand):
         fields = self.options.get("-c").split(",") if self.options.get("-c") else []
         outfile = self.options.get("<file>")
         outformat = self.options.get("FORMAT") or "csv"
-        if os.path.exists(outfile):
+
+        if outfile and os.path.exists(outfile):
             print("%s exists." % outfile)
             if not self.options.get("--yes") and not input_is_yes(
                 "Do you want to overwrite it", default="n"
             ):
                 return
 
-        with open(outfile, "w") as f:
-            if outformat == "csv":
-                self.export_csv(f, fields, essential)
-            elif outformat == "ansible":
-                self.export_ansible(f, group, verbose)
+        if outformat == "csv":
+            data = self.export_csv(fields, essential)
+        elif outformat == "ansible":
+            data = self.export_ansible(group)
+        if outfile:
+            with open(outfile, "w") as f:
+                f.write(data)
+            return
+        print(data)
 
 
 class Ping(BaseCommand):
