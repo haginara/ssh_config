@@ -1,12 +1,6 @@
-import os
-import fnmatch
-
-
-from ..client import Host
-
 from .base import BaseCommand
-from .base import ArgumentRequired
-from .utils import table_print, simple_print, table_print, grep, input_is_yes
+from .utils import table_print, grep
+
 
 class Ping(BaseCommand):
     """Ping hosts.

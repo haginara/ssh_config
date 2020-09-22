@@ -4,38 +4,29 @@ from __future__ import print_function, absolute_import
 import os
 import stat
 import sys
-import csv
-import abc
-import argparse
-import logging
-import pprint
-import inspect
-import fnmatch
-from functools import partial
 
 from docopt import docopt
 from docopt import DocoptExit
-from texttable import Texttable
 
 import ssh_config
-import importlib
 from .commands import commands
 from .commands.utils import input_is_yes
-from .client import SSHConfig, Host
+from .client import SSHConfig
 from .version import __version__
+
 
 class SSHConfigDocOpt:
     """ssh-config {version}
 
     Usage:
         ssh-config [options] <command> [<args>...]
-        
+
     Options:
         -h --help           Show this screen.
         -v --version        Show version.
         -V --verbose        Verbose output
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
-        
+
     Commands:
         gen         Generate ssh config file
         ls          Show list of Hosts in client file
@@ -50,7 +41,6 @@ class SSHConfigDocOpt:
         ping        Send ping to selected host
         version     Show version information
     """
-
     def __init__(self, *argv, **kwargs):
         try:
             docstring = self.__doc__.format(version=__version__)
@@ -64,31 +54,29 @@ class SSHConfigDocOpt:
         command_name = options["<command>"].title()
         command_options = options.get("<args>")
         config_path = options.get("--config")
-        expanded_config_path = os.path.expanduser(config_path).replace("\\", "/")
         sshconfig = self.get_sshconfig(config_path, create=False)
-        #command_cls = importlib.import_module(f".commands.{command_name}")
         command_cls = getattr(commands, command_name)
         command = command_cls(sshconfig, command_options, options)
         command.execute()
 
     def get_sshconfig(self, configpath, create=True):
         sshconfig = None
-        config = os.path.expanduser(configpath)
-        if os.path.exists(config):
+        config_fullpath = os.path.expanduser(configpath)
+        if os.path.exists(config_fullpath):
             try:
-                sshconfig = SSHConfig.load(config)
+                sshconfig = SSHConfig.load(config_fullpath)
             except ssh_config.EmptySSHConfig:
-                sshconfig = SSHConfig(config)
+                sshconfig = SSHConfig(config_fullpath)
         elif create:
             answer = input_is_yes(
-                f"{config} does not exists, Do you want to create new one",
+                f"{config_fullpath} does not exists, Do you want to create new one",
                 default="n",
             )
             if answer:
-                open(config, "w").close()
-                os.chmod(config, stat.S_IREAD | stat.S_IWRITE)
+                open(config_fullpath, "w").close()
+                os.chmod(config_fullpath, stat.S_IREAD | stat.S_IWRITE)
                 print("Created!")
-            sshconfig = SSHConfig(config)
+            sshconfig = SSHConfig(config_fullpath)
         return sshconfig
 
 

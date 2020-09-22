@@ -1,23 +1,13 @@
 from __future__ import print_function, absolute_import
-import os
 import logging
-import subprocess  # call
-from typing import List, Dict, Any, Optional, Union
 from pyparsing import (
-    Literal,
     CaselessLiteral,
-    CaselessKeyword,
     White,
     Word,
     alphanums,
-    Empty,
-    CharsNotIn,
-    Forward,
     Group,
     SkipTo,
-    #Optional,
     OneOrMore,
-    ZeroOrMore,
     pythonStyleComment,
     Dict,
     lineEnd,
@@ -41,30 +31,30 @@ class WrongSSHConfig(Exception):
 
 class Host(object):
     attrs = [
-        ("AddressFamily", str), # any, inet, inet6
+        ("AddressFamily", str),  # any, inet, inet6
         ("BatchMode", str),
         ("BindAddress", str),
-        ("ChallengeResponseAuthentication", str), # yes, no
-        ("CheckHostIP", str), # yes, no
+        ("ChallengeResponseAuthentication", str),  # yes, no
+        ("CheckHostIP", str),  # yes, no
         ("Cipher", str),
         ("Ciphers", str),
-        ("ClearAllForwardings", str), # yes, no
-        ("Compression", str), # yes, no
-        ("CompressionLevel", int), # 1 to 9
-        ("ConnectionAttempts", int), # default: 1
+        ("ClearAllForwardings", str),  # yes, no
+        ("Compression", str),  # yes, no
+        ("CompressionLevel", int),  # 1 to 9
+        ("ConnectionAttempts", int),  # default: 1
         ("ConnectTimeout", int),
-        ("ControlMaster", str), # yes, no
-        ("ControlPath", str), 
-        ("DynamicForward", str), #[bind_address:]port, [bind_adderss/]port
-        ("EnableSSHKeysign", str), # yes, no
-        ("EscapeChar", str), #default: '~'
-        ("ExitOnForwardFailure", str), #yes, no
-        ("ForwardAgent", str), # yes, no
-        ("ForwardX11", str), # yes, no
-        ("ForwardX11Trusted", str), # yes, no
-        ("GatewayPorts", str), # yes, no
-        ("GlobalKnownHostsFile", str), # yes, no
-        ("GSSAPIAuthentication", str), # yes, no
+        ("ControlMaster", str),  # yes, no
+        ("ControlPath", str),
+        ("DynamicForward", str),  # [bind_address:]port, [bind_adderss/]port
+        ("EnableSSHKeysign", str),  # yes, no
+        ("EscapeChar", str),  # default: '~'
+        ("ExitOnForwardFailure", str),  # yes, no
+        ("ForwardAgent", str),  # yes, no
+        ("ForwardX11", str),  # yes, no
+        ("ForwardX11Trusted", str),  # yes, no
+        ("GatewayPorts", str),  # yes, no
+        ("GlobalKnownHostsFile", str),  # yes, no
+        ("GSSAPIAuthentication", str),  # yes, no
         ("HostName", str),
         ("User", str),
         ("Port", int),
@@ -82,9 +72,9 @@ class Host(object):
         ("IdentityAgent", str),
         ("PreferredAuthentications", str),
         ("ServerAliveInterval", int),
-        ("ServerAliveCountMax", int),        
-        ("UsePrivilegedPort", str), # yes, no
-        ("TCPKeepAlive", str), # yes, no
+        ("ServerAliveCountMax", int),
+        ("UsePrivilegedPort", str),  # yes, no
+        ("TCPKeepAlive", str),  # yes, no
     ]
 
     def __init__(self, name, attrs):
@@ -95,11 +85,16 @@ class Host(object):
             if attrs.get(attr.upper()):
                 self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
 
-    def set_name(self, name: Union[List[str], str]):
+    def set_name(self, name):
+        """ Set Host name
+
+        Args:
+            name (list or str)
+        """
         if isinstance(name, list):
             self.__name = name
         elif isinstance(name, str):
-            self.__name = name.split() 
+            self.__name = name.split()
         else:
             raise TypeError
 
@@ -113,7 +108,7 @@ class Host(object):
         elif include:
             return {key: self.__attrs[key] for key in self.__attrs if key in include}
         return self.__attrs
-    
+
     def __repr__(self):
         return f"Host<{self.name}>"
 
@@ -136,13 +131,21 @@ class Host(object):
             return self
         raise AttributeError
 
-    def get(self, key, default=None) -> Any:
+    def get(self, key, default=None):
+        """Get value by key name
+
+        args:
+            key (str)
+            default (any)
+        returns:
+            value or None
+        """
         return self.__attrs.get(key, default)
 
-    def set(self, key: str, value: Any):
+    def set(self, key: str, value):
         self.__attrs[key] = value
 
-    def command(self, cmd: str="ssh") -> str:
+    def command(self, cmd="ssh"):
         if self.Port and self.Port != 22:
             port = "-p {port} ".format(port=self.Port)
         else:
@@ -156,7 +159,7 @@ class Host(object):
         return "{cmd} {port}{username}{host}".format(
             cmd=cmd, port=port, username=user, host=self.HostName
         )
-    
+
     def ansible(self):
         pass
 
@@ -168,7 +171,7 @@ class SSHConfig(object):
         self.__path = path
         self.__hosts = []
         self.raw = None
-    
+
     def __repr__(self) -> str:
         return f"SSHConfig<Path:{self.__path}>"
 
@@ -194,9 +197,16 @@ class SSHConfig(object):
             ssh_config.append(Host(name, attrs))
         return ssh_config
 
-    def parse(self, data: str="") -> Optional[Dict]:
-        """ parse ssh-config data
+    def parse(self, data=""):
+        """Parse ssh-config data
+
+        args:
+            data (str)
+
+        returns:
+            Parsed config or None (dict)
         """
+
         if data:
             self.raw = data
 
@@ -209,7 +219,7 @@ class SSHConfig(object):
         paramValueDef = SkipTo("#" | lineEnd)
         indentStack = [1]
 
-        HostDecl = (HOST | MATCH ) + SEP + VALUE
+        HostDecl = (HOST | MATCH) + SEP + VALUE
         paramDef = Dict(Group(KEY + SEP + paramValueDef))
         block = indentedBlock(paramDef, indentStack)
         HostBlock = Dict(Group(HostDecl + block))
@@ -265,7 +275,7 @@ class SSHConfig(object):
             return True
         return False
 
-    def write(self, filename: str="") -> str:
+    def write(self, filename=""):
         if filename:
             self.__path = filename
         with open(self.__path, "w") as f:

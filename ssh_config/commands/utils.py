@@ -1,10 +1,5 @@
 import fnmatch
-import os
-import json
-from typing import Dict, List
-
 from texttable import Texttable
-
 
 
 def input_is_yes(msg, default="n"):
@@ -50,6 +45,7 @@ def simple_print():
         host = yield
         print(host.name)
 
+
 @coroutine
 def ssh_format_print():
     while True:
@@ -62,6 +58,7 @@ def ssh_format_print():
         line += f" {host.User}@{host.HostName}"
         print(f"{host.name:<30s} | {line}")
 
+
 @coroutine
 def field_print(fields):
     while True:
@@ -72,7 +69,8 @@ def field_print(fields):
 
 @coroutine
 def table_print(verbose=False):
-    ## Print Table
+    """Print Table
+    """
     table = Texttable(max_width=100)
     table.set_deco(Texttable.HEADER)
     header = ["Host", "HostName", "User", "Port", "IdentityFile"]

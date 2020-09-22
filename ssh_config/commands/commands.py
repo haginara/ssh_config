@@ -24,8 +24,8 @@ class Gen(BaseCommand):
     """
 
     def execute(self):
-        open(config, "w").close()
-        os.chmod(config, stat.S_IREAD | stat.S_IWRITE)
+        open(self.config, "w").close()
+        os.chmod(self.config, stat.S_IREAD | stat.S_IWRITE)
         print("Created!")
 
 
@@ -93,7 +93,6 @@ class Add(BaseCommand):
     Options:
         -b,--bastion        Add attributes for Bastion host
         -y,--yes            Force answer yes
-        -v,--verbose        Verbose Output
         -h,--help           Shwo this screen
 
     Attributes:
@@ -106,7 +105,6 @@ class Add(BaseCommand):
         self.__doc__ = template.render(attrs=Host.attrs)
 
     def execute(self):
-        verbose = self.options.get("--verbose")
         hostname = self.options.get("<HOSTNAME>")
         attrs = self.options.get("<attribute=value>", [])
         is_bastion = self.options.get("--bastion")
@@ -161,7 +159,7 @@ class Update(BaseCommand):
         verbose = self.options.get("--verbose")
         hostname = self.options.get("<HOSTNAME>")
         attrs = self.options.get("<attribute=value>", [])
-        is_bastion = self.options.get("--bastion")
+        is_bastion = self.options.get("--bastion")  # TODO
         try:
             attrs = {
                 attr.split("=")[0]: attr.split("=")[1]
@@ -196,6 +194,7 @@ class Update(BaseCommand):
         ):
             self.config.write()
 
+
 class Rename(BaseCommand):
     """Rename host.
 
@@ -206,11 +205,9 @@ class Rename(BaseCommand):
 
     Options:
         -y --yes            Force answer yes
-        -v --verbose        Verbose Output
         -h --help           Shwo this screen
     """
     def execute(self):
-        verbose = self.options.get("--verbose")
         old_hostname = self.options.get("<OLD_HOSTNAME>")
         new_hostname = self.options.get("<NEW_HOSTNAME>")
         host = self.config.get(old_hostname, raise_exception=False)
@@ -224,6 +221,8 @@ class Rename(BaseCommand):
             "Do you want to save it", default="n"
         ):
             self.config.write()
+
+
 class Rm(BaseCommand):
     """Remove Host.
     Usage: rm [options] (HOSTNAME)
@@ -292,22 +291,66 @@ class Import(BaseCommand):
 class Export(BaseCommand):
     """Export hosts.
     Usage: export [options] ([FORMAT] <file> | <file>)
-    
+
     Options:
         -x                  Export only essential fields
         -g --group GROUP    Name of group
-        -c columns          Column names, A comma separted list of field names. 
+        -c columns          Column names, A comma separted list of field names.
         -h --help           Show this screen
         -v --verbose        Verbose output
-        -q --quiet          Quiet output
         -y --yes            Forcily yes
-    
+
     Format:
         csv [default]
     """
 
+    def export_csv(self, fobj, fields, essential=False):
+        """Export csv file
+        """
+        if essential:
+            header = ["HostName", "User", "Port", "IdentityFile"]
+        elif fields:
+            header = fields
+        else:
+            header = [attr for attr, attr_type in Host.attrs]
+
+        writer = csv.DictWriter(
+            fobj, fieldnames=["Name"] + header, lineterminator="\n"
+        )
+        writer.writeheader()
+        for host in self.config:
+            row = {"Name": host.name}
+            row.update(host.attributes(include=header))
+            writer.writerow(row)
+
+    def export_ansible(self, fobj, group, verbose=False):
+        """Export Ansible inventory
+
+        in INI
+        jumper ansible_port=5555 ansible_host=192.0.2.50
+        in YAML
+        hosts:
+            jumper:
+                ansible_port: 5555
+                ansible_host: 192.0.2.50
+        """
+        if group:
+            fobj.write("[%s]\n" % group)
+        for host in self.config:
+            if host.name == "*":
+                continue
+            line = "{:<20}ansible_host={:<20}".format(host.name, host.HostName)
+            if host.User:
+                line += "ansible_user={:<10}".format(host.User)
+            if host.IdentityFile:
+                line += "ansible_ssh_private_key_file={:<20}".format(
+                    os.path.expanduser(host.IdentityFile)
+                )
+            if verbose:
+                print(line)
+            fobj.write("%s\n" % line)
+
     def execute(self):
-        quiet = self.options.get("--quiet")
         verbose = self.options.get("--verbose")
         essential = self.options.get("-x")
         group = self.options.get("--group")
@@ -323,46 +366,9 @@ class Export(BaseCommand):
 
         with open(outfile, "w") as f:
             if outformat == "csv":
-                if essential:
-                    header = ["HostName", "User", "Port", "IdentityFile"]
-                elif fields:
-                    header = fields
-                else:
-                    header = [attr for attr, attr_type in Host.attrs]
-
-                writer = csv.DictWriter(
-                    f, fieldnames=["Name"] + header, lineterminator="\n"
-                )
-                writer.writeheader()
-                for host in self.config:
-                    row = {"Name": host.name}
-                    row.update(host.attributes(include=header))
-                    writer.writerow(row)
+                self.export_csv(f, fields, essential)
             elif outformat == "ansible":
-                """
-                in INI
-                jumper ansible_port=5555 ansible_host=192.0.2.50
-                in YAML
-                hosts:
-                    jumper:
-                        ansible_port: 5555
-                        ansible_host: 192.0.2.50
-                """
-                if group:
-                    f.write("[%s]\n" % group)
-                for host in self.config:
-                    if host.name == "*":
-                        continue
-                    line = "{:<20}ansible_host={:<20}".format(host.name, host.HostName)
-                    if host.User:
-                        line += "ansible_user={:<10}".format(host.User)
-                    if host.IdentityFile:
-                        line += "ansible_ssh_private_key_file={:<20}".format(
-                            os.path.expanduser(host.IdentityFile)
-                        )
-                    if verbose:
-                        print(line)
-                    f.write("%s\n" % line)
+                self.export_ansible(f, group, verbose)
 
 
 class Ping(BaseCommand):
@@ -383,12 +389,12 @@ class Ping(BaseCommand):
             run(args=['ping', self.config.get(host).HostName])
         else:
             run(args=['ping', '-t', '4', self.config.get(host).HostName])
-            
+
 
 class Bastion(BaseCommand):
     """Manage Bastion hosts
     Usage: bastion [options] <bastion> <server>...
-    
+
     Options:
         -h --help           Show this screen
         -v --verbose        Verbose output
