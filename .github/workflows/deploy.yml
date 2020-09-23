@@ -1,4 +1,4 @@
-name: Upload ssh-config to test.pypi
+name: Upload ssh-config to pypi
 
 on:
   create:
@@ -26,4 +26,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.pypi_password }}
-        repository_url: https://pypi.org/legacy/
