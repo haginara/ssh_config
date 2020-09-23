@@ -314,11 +314,12 @@ class Export(BaseCommand):
         else:
             header = [attr for attr, attr_type in Host.attrs]
 
-        data = f"{','.join(['name'] + header)}\n"
+        data = f"{','.join(['Name'] + header)}\n"
         for host in self.config:
-            row = {"Name": host.name}
-            row.update(host.attributes(include=header))
-            data += f"{','.join([value for value in row.values()])}\n"
+            values = [host.name]
+            for name in header:
+                values.append(host.get(name, ''))
+            data += f"{','.join([str(value) for value in values])}\n"
         return data
 
     def export_ansible(self, group):
