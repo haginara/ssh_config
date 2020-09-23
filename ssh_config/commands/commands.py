@@ -1,5 +1,4 @@
 import os
-import sys
 import stat
 import csv
 import platform
@@ -315,9 +314,6 @@ class Export(BaseCommand):
         else:
             header = [attr for attr, attr_type in Host.attrs]
 
-        writer = csv.DictWriter(
-            fobj, fieldnames=["Name"] + header, lineterminator="\n"
-        )
         data = f"{','.join(['name'] + header)}\n"
         for host in self.config:
             row = {"Name": host.name}
