@@ -81,9 +81,12 @@ class SSHConfigDocOpt:
 
 
 def main(argv=sys.argv):
-    SSHConfigDocOpt(
-        argv[1:], options_first=True, version="ssh_config %s" % __version__
-    )
+    try:
+        SSHConfigDocOpt(
+            argv[1:], options_first=True, version="ssh_config %s" % __version__
+        )
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupted...")
 
 
 if __name__ == "__main__":

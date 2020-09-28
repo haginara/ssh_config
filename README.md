@@ -18,8 +18,9 @@ Yes, I am not sure this is eaiser way to handle it. but I am trying.
 
 Requirements
 ------------
-After 0.0.15, Python27 is not supported.
-Python 2.7, 3.6, 3.7
+    After 0.0.15, Python27 is not supported.
+
+Python 3.6 or higher
 
 Installation
 ------------
@@ -33,22 +34,28 @@ Usage
 ssh-config <version>
 
     Usage:
-        ssh-config [options] [COMMAND] [ARGS...]
+        ssh-config [options] <command> [<args>...]
 
     Options:
         -h --help           Show this screen.
         -v --version        Show version.
+        -V --verbose        Verbose output
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
 
     Commands:
+        gen         Generate ssh config file
         ls          Show list of Hosts in client file
+        get         Get ssh client config with Name
         add         Add new Host configuration
+        update      Update host configuration
+        rename      Update host configuration
         rm          Remove exist Host configuration
-        init        Create ~/.ssh/config file
         import      Import Hosts from csv file to SSH Client config
-        export      Export Hosts to csv format
+        export      Export Hosts to csv/ansible format
         bastion     Bastion register/use
+        ping        Send ping to selected host
         version     Show version information
+
 ```
 
 Use-cases
@@ -100,4 +107,15 @@ $ ssh-config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
 #### add ssh key to multiple servers
 ```
 ssh-config ls --only-name | xargs -I{} ssh-copy-id -i ~/.ssh/id_rsa {}
+```
+
+### Export ssh-config to ansible inventory ini format.
+```
+ssh-config export ansible -g linux
+
+[linux]
+server1              ansible_host=203.0.113.76        
+server_cmd_1         ansible_host=203.0.113.76        
+server_cmd_2         ansible_host=203.0.113.76         ansible_user=user      
+server_cmd_3         ansible_host=203.0.113.76         ansible_user=user      
 ```

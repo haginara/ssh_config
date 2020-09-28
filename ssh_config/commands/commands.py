@@ -120,7 +120,7 @@ class Add(BaseCommand):
 
         host = self.config.get(hostname, raise_exception=False)
         if host:
-            print("%s host already exist" % hostname)
+            print(f"{hostname} host already exist")
             return
         host = Host(hostname, attrs)
         self.config.append(host)
@@ -301,7 +301,8 @@ class Export(BaseCommand):
         -y --yes            Forcily yes
 
     Format:
-        csv [default]
+        ansible [default]
+        csv
     """
 
     def export_csv(self, fields, essential=False):
@@ -354,10 +355,10 @@ class Export(BaseCommand):
         group = self.options.get("--group")
         fields = self.options.get("-c").split(",") if self.options.get("-c") else []
         outfile = self.options.get("<file>")
-        outformat = self.options.get("FORMAT") or "csv"
+        outformat = self.options.get("FORMAT") or "ansible"
 
         if outfile and os.path.exists(outfile):
-            print("%s exists." % outfile)
+            print(f"{outfile} exists.")
             if not self.options.get("--yes") and not input_is_yes(
                 "Do you want to overwrite it", default="n"
             ):
@@ -412,17 +413,17 @@ class Bastion(BaseCommand):
         bastion_host = self.config.get(bastion)
         forward_agent = bastion_host.get("ForwardAgent", None)
         if forward_agent is None or forward_agent != "yes":
-            print("%s is not bastion server" % bastion)
+            print(f"{bastion} is not bastion server")
             return
 
         for server in servers:
             host = self.config.get(server, raise_exception=False)
             if host is None:
-                print("%s does not exist" % server)
+                print(f"{server} does not exist")
                 return
             if host.get("ProxyCommand", None):
                 if not self.options.get("--yes") and not input_is_yes(
-                    "%s has ProxyComamnd, %s" % (host, host.ProxyCommand), default="n"
+                    f"{host} has ProxyComamnd, {host.ProxyComamnd}", default="n"
                 ):
                     return
             host.set("ProxyCommand", "ProxyCommand ssh -q -A bastion -W %h:%p")
