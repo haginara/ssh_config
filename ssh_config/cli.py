@@ -76,7 +76,8 @@ class SSHConfigDocOpt:
                 open(config_fullpath, "w").close()
                 os.chmod(config_fullpath, stat.S_IREAD | stat.S_IWRITE)
                 print("Created!")
-            sshconfig = SSHConfig(config_fullpath)
+        
+        sshconfig = SSHConfig(config_fullpath)
         return sshconfig
 
 

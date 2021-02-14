@@ -24,9 +24,19 @@ class Gen(BaseCommand):
     """
 
     def execute(self):
-        open(self.config, "w").close()
-        os.chmod(self.config, stat.S_IREAD | stat.S_IWRITE)
-        print("Created!")
+        if not os.path.exists(self.config.config_path):
+            open(self.config.config_path, "w").close()
+            os.chmod(self.config.config_path, stat.S_IREAD | stat.S_IWRITE)
+            print(f"Created at {self.config.config_path}")
+        else:
+            answer = input_is_yes(
+                f"{self.config.config_path} already exists, Do you want to overwrite it?",
+                default="n",
+            )
+            if answer:
+                open(self.config.config_path, "w").close()
+                os.chmod(self.config.config_path, stat.S_IREAD | stat.S_IWRITE)
+                print(f"Created at {self.config.config_path}")
 
 
 class Get(BaseCommand):

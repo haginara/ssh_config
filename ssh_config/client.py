@@ -168,12 +168,12 @@ class SSHConfig(object):
     """
     """
     def __init__(self, path: str):
-        self.__path = path
+        self.config_path = path
         self.__hosts = []
         self.raw = None
 
     def __repr__(self) -> str:
-        return f"SSHConfig<Path:{self.__path}>"
+        return f"SSHConfig<Path:{self.config_path}>"
 
     @classmethod
     def load(cls, config_path: str):
@@ -277,13 +277,13 @@ class SSHConfig(object):
 
     def write(self, filename=""):
         if filename:
-            self.__path = filename
-        with open(self.__path, "w") as f:
+            self.config_path = filename
+        with open(self.config_path, "w") as f:
             for host in self.__hosts:
                 f.write("Host %s\n" % host.name)
                 for attr in host.attributes():
                     f.write("    %s %s\n" % (attr, host.get(attr)))
-        return self.__path
+        return self.config_path
 
     def asdict(self) -> Dict:
         return {host.name: host.attributes() for host in self.__hosts}
