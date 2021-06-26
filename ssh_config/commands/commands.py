@@ -128,8 +128,7 @@ class Add(BaseCommand):
         if is_bastion:
             attrs.update({"ProxyCommand": "none", "ForwardAgent": "yes"})
         
-        host = self.config.get(hostname)
-        if host:
+        if self.config.exists(hostname):
             print(f"{hostname} host already exist")
             return
         host = Host(hostname, attrs)
