@@ -213,7 +213,7 @@ class SSHConfig(object):
         return self.get(name)
 
     @classmethod
-    def load(cls, config_path: str):
+    def create(cls, config_path: str):
         """ 
         Load ssh-config file with path
 
@@ -223,9 +223,11 @@ class SSHConfig(object):
         returns:
             SSHConfig
         """
-        logger.debug("Load: %s" % config_path)
+        logger.debug("Create: %s" % config_path)
+        if os.path.exists(config_path):
+            raise FileExistsError(config_path)
+        open(config_path, 'w').write("")
         ssh_config = cls(config_path)
-        ssh_config.load_hosts()
         return ssh_config
 
     def load_hosts(self):
@@ -234,7 +236,11 @@ class SSHConfig(object):
         """
         try:
             with open(self.config_path, 'r') as f:
-                parsed = self.parse(f.read())
+                self.raw = f.read()
+                if len(self.raw) < 1:
+                    "If file is empty, it returns None"
+                    return None
+                parsed = self.parse()
                 if parsed is None:
                     raise WrongSSHConfig(self.config_path)
                 for name, config in sorted(parsed.asDict().items()):
@@ -242,8 +248,8 @@ class SSHConfig(object):
                     for attr in config:
                         attrs.update(attr)
                     self.hosts.append(Host(name, attrs))
-        except IOError:
-            raise Exception()
+        except IOError as e:
+            raise e
 
     def parse(self, data=""):
         """
@@ -258,9 +264,6 @@ class SSHConfig(object):
 
         if data:
             self.raw = data
-        
-        if len(self.raw) < 1:
-            return None
 
         SPACE = White().suppress()
         SEP = Suppress(SPACE) | Suppress("=")
@@ -328,7 +331,7 @@ class SSHConfig(object):
         except NameError:
             return False
         return True
-        
+
     def get(self, name: str):
         """
         get Host with name
@@ -396,7 +399,7 @@ class SSHConfig(object):
         """
         hosts = []
         for host in self.hosts:
-            host_dict= {'Host': host.name}
+            host_dict = {'Host': host.name}
             host_dict.update(host.attributes())
             hosts.append(host_dict)
         return hosts

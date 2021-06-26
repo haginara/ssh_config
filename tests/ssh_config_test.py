@@ -29,13 +29,13 @@ new_data = """Host server2
 
 class TestSSHConfig(unittest.TestCase):
     def test_load(self):
-        configs = SSHConfig.load(sample)
+        configs = SSHConfig(sample)
         for config in configs:
             self.assertIn(config.name, ["server1", "*"])
             break
 
     def test_other(self):
-        configs = SSHConfig.load(sample)
+        configs = SSHConfig(sample)
         for host in configs:
             if host.name == "server1":
                 self.assertEqual(host.HostName, "203.0.113.76")
@@ -44,24 +44,25 @@ class TestSSHConfig(unittest.TestCase):
                 self.assertEqual(host.ServerAliveInterval, 40)
 
     def test_set(self):
-        configs = SSHConfig.load(sample)
-        host_0 = configs[0]
-        host_1 = configs[1]
+        configs = SSHConfig(sample)
+        host_0 = configs.hosts[0]
+        host_1 = configs.hosts[1]
         self.assertTrue(isinstance(host_0, Host))
         self.assertTrue(isinstance(host_1, Host))
 
     def test_get_host(self):
-        configs = SSHConfig.load(sample)
+        configs = SSHConfig(sample)
         self.assertEqual("server1", configs.get("server1").name)
-        self.assertRaises(KeyError, configs.get, "NoExist")
+        with self.assertRaises(NameError):
+            configs.get("NoExist")
 
     def test_set_host(self):
-        configs = SSHConfig.load(sample)
-        configs.append(new_host)
-        self.assertEqual(new_host, configs[-1])
+        configs = SSHConfig(sample)
+        configs.add(new_host)
+        self.assertEqual(new_host, configs.hosts[-1])
 
     def test_update(self):
-        configs = SSHConfig.load(sample)
+        configs = SSHConfig(sample)
         configs.update("server1", {"IdentityFile": "~/.ssh/id_rsa_new"})
         self.assertRaises(AttributeError, configs.update, "server1", [])
         self.assertEqual(configs.get("server1").IdentityFile, "~/.ssh/id_rsa_new")
@@ -81,30 +82,31 @@ class TestSSHConfig(unittest.TestCase):
             )
 
     def test_write(self):
-        configs = SSHConfig.load(sample)
-        configs.append(new_host)
+        configs = SSHConfig(sample)
+        configs.add(new_host)
         new_sample_path = os.path.join(os.path.dirname(__file__), "sample_new")
         configs.write(filename=new_sample_path)
-        new_config = SSHConfig.load(new_sample_path)
+        new_config = SSHConfig(new_sample_path)
         os.remove(new_sample_path)
         self.assertEqual("server2", new_config.get("server2").name)
 
     def test_new(self):
         empty_sample = os.path.join(os.path.dirname(__file__), "sample_empty")
-        config = SSHConfig(empty_sample)
-        config.append(new_host)
+        config = SSHConfig.create(empty_sample)
+        config.add(new_host)
         config.write()
         with open(empty_sample, "r") as f:
             self.assertEqual(new_data, f.read())
         os.remove(empty_sample)
 
     def test_remove(self):
-        configs = SSHConfig.load(sample)
-        configs.remove("server1")
-        self.assertRaises(KeyError, configs.get, "server1")
+        config = SSHConfig(sample)
+        config.remove("server1")
+        with self.assertRaises(NameError):
+            config.get("server1")
 
     def test_host_command(self):
-        configs = SSHConfig.load(sample)
+        configs = SSHConfig(sample)
         self.assertEqual("ssh 203.0.113.76", configs.get("server1").command())
         self.assertEqual(
             "ssh -p 2202 203.0.113.76", configs.get("server_cmd_1").command()
@@ -115,9 +117,8 @@ class TestSSHConfig(unittest.TestCase):
         )
 
     def test_asdict(self):
-        configs = SSHConfig.load(sample)
-        self.assertEqual(
-            [{
+        configs = SSHConfig(sample)
+        expected = sorted([
                 {"Host": "*", "ServerAliveInterval": 40},
                 {"Host": "server1", "HostName": "203.0.113.76", "ServerAliveInterval": 200},
                 {"Host": "server_cmd_1", "HostName": "203.0.113.76", "Port": 2202},
@@ -136,8 +137,11 @@ class TestSSHConfig(unittest.TestCase):
                     "Port": 2202,
                     "User": "user",
                 },
-            }],
-            configs.asdict(),
+            ], key=lambda h: h['Host'])
+
+        self.assertEqual(
+            expected,
+            sorted(configs.asdict(), key=lambda h: h['Host']),
         )
 
 
@@ -217,7 +221,7 @@ server_cmd_3   203.0.113.76   user   2202   None
                 "HostName=238.0.4.1",
             ]
         )
-        sshconfig = SSHConfig.load(sample_add)
+        sshconfig = SSHConfig(sample_add)
         host = sshconfig.get("test_add")
         self.assertIsNotNone(host)
         self.assertEqual(host.HostName, "238.0.4.1")
@@ -237,7 +241,7 @@ server_cmd_3   203.0.113.76   user   2202   None
                 "IdentityFile=~/.ssh/id_rsa_test",
             ]
         )
-        sshconfig = SSHConfig.load(new_sample)
+        sshconfig = SSHConfig(new_sample)
         host = sshconfig.get("server1")
         self.assertEqual("203.0.113.76", host.HostName)
         self.assertEqual("~/.ssh/id_rsa_test", host.IdentityFile)
@@ -280,7 +284,7 @@ server_cmd_3   203.0.113.76   user   2202   None
                 "IdentityFile=~/.ssh/id_rsa_test",
             ]
         )
-        sshconfig = SSHConfig.load(new_sample)
+        sshconfig = SSHConfig(new_sample)
         for host in sshconfig:
             if "server_cmd" in host.name:
                 self.assertEqual("203.0.113.76", host.HostName)
@@ -291,7 +295,7 @@ server_cmd_3   203.0.113.76   user   2202   None
         new_sample = os.path.join(os.path.dirname(__file__), "sample.rm")
         shutil.copy(sample, new_sample)
         cli.main(["ssh_config", "-f", new_sample, "rm", "-y", "server1"])
-        sshconfig = SSHConfig.load(new_sample)
+        sshconfig = SSHConfig(new_sample)
         with self.assertRaises(NameError):
             sshconfig.get("server1")
             os.remove(new_sample)

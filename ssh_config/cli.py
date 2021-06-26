@@ -63,10 +63,7 @@ class SSHConfigDocOpt:
         sshconfig = None
         config_fullpath = os.path.expanduser(configpath)
         if os.path.exists(config_fullpath):
-            try:
-                sshconfig = SSHConfig.load(config_fullpath)
-            except ssh_config.EmptySSHConfig:
-                sshconfig = SSHConfig(config_fullpath)
+            sshconfig = SSHConfig(config_fullpath)
         elif create:
             answer = input_is_yes(
                 f"{config_fullpath} does not exists, Do you want to create new one",
