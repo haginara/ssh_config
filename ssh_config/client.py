@@ -1,4 +1,6 @@
 from __future__ import print_function, absolute_import
+
+import os
 import logging
 from pyparsing import (
     CaselessLiteral,
@@ -29,7 +31,15 @@ class WrongSSHConfig(Exception):
         super().__init__("Wrong SSH Config: %s" % path)
 
 
+class HostExistsError(Exception):
+    def __init__(self, name):
+        super().__init__(f"Host already exists, {name}")
+
+
 class Host(object):
+    """
+    Host object contains information of Host
+    """
     attrs = [
         ("AddressFamily", str),  # any, inet, inet6
         ("BatchMode", str),
@@ -86,9 +96,10 @@ class Host(object):
                 self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
 
     def set_name(self, name):
-        """ Set Host name
+        """
+        Set Host name
 
-        Args:
+        args:
             name (list or str)
         """
         if isinstance(name, list):
@@ -97,17 +108,6 @@ class Host(object):
             self.__name = name.split()
         else:
             raise TypeError
-
-    def attributes(self, exclude=[], include=[]):
-        if exclude and include:
-            raise Exception("exclude and include cannot be together")
-        if exclude:
-            return {
-                key: self.__attrs[key] for key in self.__attrs if key not in exclude
-            }
-        elif include:
-            return {key: self.__attrs[key] for key in self.__attrs if key in include}
-        return self.__attrs
 
     def __repr__(self):
         return f"Host<{self.name}>"
@@ -120,6 +120,17 @@ class Host(object):
 
     def __getattr__(self, key):
         return self.__attrs.get(key)
+
+    def attributes(self, exclude=[], include=[]):
+        if exclude and include:
+            raise Exception("exclude and include cannot be together")
+        if exclude:
+            return {
+                key: self.__attrs[key] for key in self.__attrs if key not in exclude
+            }
+        elif include:
+            return {key: self.__attrs[key] for key in self.__attrs if key in include}
+        return self.__attrs
 
     @property
     def name(self):
@@ -165,40 +176,78 @@ class Host(object):
 
 
 class SSHConfig(object):
+    """ ssh_config file.
     """
-    """
-    def __init__(self, path: str):
-        self.config_path = path
-        self.__hosts = []
+    __slots__ = ['hosts', 'raw', 'config_path']
+
+    def __init__(self, path=None):
+        """
+        Initialize an instance of a ssh_config file
+        params:
+             path(str or None): the path of ssh_config file to manage
+        
+        returns:
+            None
+        """
+        
+        self.hosts = []
         self.raw = None
+        if path is None:
+            self.config_path = os.path.expanduser("~/.ssh/config")
+        else:
+            self.config_path = path
+        
+        self.load_hosts()
+    
 
     def __repr__(self) -> str:
         return f"SSHConfig<Path:{self.config_path}>"
 
+    def __iter__(self):
+        return self.hosts.__iter__()
+
+    def __next__(self):
+        return self.hosts.next()
+
+    def __getitem__(self, name):
+        return self.get(name)
+
     @classmethod
     def load(cls, config_path: str):
-        """ Load ssh-config file with path
+        """ 
+        Load ssh-config file with path
+
+        params:
+            config_path (str): path of ssh_config file
+
+        returns:
+            SSHConfig
         """
         logger.debug("Load: %s" % config_path)
         ssh_config = cls(config_path)
-
-        with open(config_path, "r") as f:
-            ssh_config.raw = f.read()
-        if len(ssh_config.raw) <= 0:
-            raise EmptySSHConfig(config_path)
-        # logger.debug("DATA: %s", data)
-        parsed = ssh_config.parse()
-        if parsed is None:
-            raise WrongSSHConfig(config_path)
-        for name, config in sorted(parsed.asDict().items()):
-            attrs = dict()
-            for attr in config:
-                attrs.update(attr)
-            ssh_config.append(Host(name, attrs))
+        ssh_config.load_hosts()
         return ssh_config
 
+    def load_hosts(self):
+        """
+        Load the ssh_config file into `hosts` with config_path
+        """
+        try:
+            with open(self.config_path, 'r') as f:
+                parsed = self.parse(f.read())
+                if parsed is None:
+                    raise WrongSSHConfig(self.config_path)
+                for name, config in sorted(parsed.asDict().items()):
+                    attrs = {}
+                    for attr in config:
+                        attrs.update(attr)
+                    self.hosts.append(Host(name, attrs))
+        except IOError:
+            raise Exception()
+
     def parse(self, data=""):
-        """Parse ssh-config data
+        """
+        Parse ssh-config data from raw data
 
         args:
             data (str)
@@ -209,6 +258,9 @@ class SSHConfig(object):
 
         if data:
             self.raw = data
+        
+        if len(self.raw) < 1:
+            return None
 
         SPACE = White().suppress()
         SEP = Suppress(SPACE) | Suppress("=")
@@ -223,67 +275,127 @@ class SSHConfig(object):
         paramDef = Dict(Group(KEY + SEP + paramValueDef))
         block = indentedBlock(paramDef, indentStack)
         HostBlock = Dict(Group(HostDecl + block))
+
         try:
-            return OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
+            parsed = OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
         except ParseException as e:
-            print(e)
-        return None
+            return None
 
-    def __iter__(self):
-        return self.__hosts.__iter__()
-
-    def __next__(self):
-        return self.__hosts.next()
-
-    def __getitem__(self, idx: int):
-        return self.__hosts[idx]
-
-    def hosts(self):
-        return self.__hosts
+        return parsed
 
     def update(self, name: str, attrs: Dict):
-        for idx, host in enumerate(self.__hosts):
-            if name == host.name:
-                host.update(attrs)
-                self.__hosts[idx] = host
-                break
+        """
+        Update the host with name and attributes
 
+        params:
+            name (str): Name of Host
+            attrs (dict): Attributes
+        
+        returns:
+            None
+        """
+        idx, host = self.get_host_with_index(name)
+        host.update(attrs)
+        self.hosts[idx] = host
+        
     def rename(self, name: str, new_name: str):
-        for idx, host in enumerate(self.__hosts):
-            if name == host.name:
-                host.setname(new_name)
-                self.__hosts[idx] = host
-                break
+        """
+        Rename the host name(pattern)
 
-    def get(self, name: str, raise_exception=True):
-        for host in self.__hosts:
-            if name == host.name:
-                return host
-        if raise_exception:
-            raise KeyError
-        return None
+        args:
+            name: old name
+            new_name: new name
+        
+        returns:
+            None
+        """
+        idx, host = self.get_host_with_index(name)
+        host.setname(new_name)
+        self.hosts[idx] = host
 
-    def append(self, host: Host):
+    def get(self, name: str):
+        """
+        get Host with name
+
+        args:
+            name (str): host name
+        
+        returns:
+            Host
+        """
+        idx, host = self.get_host_with_index(name)
+        return host
+        
+
+    def add(self, host: Host):
+        """
+        Add host to ssh config object
+
+        args:
+            host (Host): Host object to add
+        """
         if not isinstance(host, Host):
             raise TypeError
-        self.__hosts.append(host)
+        try:
+            self.get(host.name)
+        except NameError:
+            self.hosts.append(host)
+            return
+        raise HostExistsError(host.name)
 
-    def remove(self, name: str) -> bool:
-        host = self.get(name, raise_exception=False)
-        if host:
-            self.__hosts.remove(host)
-            return True
-        return False
+    def remove(self, name: str):
+        """
+        Remove the host with name
 
-    def write(self, filename=""):
+        args:
+            name (str): host name
+        """
+        idx, host = self.get_host_with_index(name)
+        self.hosts.remove(host)
+        
+
+    def write(self, filename=None):
+        """
+        Write the current ssh_config to self.config_path or given filename
+
+        It chagnes the self.config_path, if the filename is given.
+        args:
+            filename (str): target filename to be written.
+        """
         if filename:
             self.config_path = filename
-        with open(self.config_path, "w") as f:
-            for host in self.__hosts:
-                f.write("Host %s\n" % host.name)
-                for attr in host.attributes():
-                    f.write("    %s %s\n" % (attr, host.get(attr)))
-        return self.config_path
 
-    def asdict(self) -> Dict:
-        return {host.name: host.attributes() for host in self.__hosts}
+        with open(self.config_path, "w") as f:
+            for host in self.hosts:
+                f.write(f"Host {host.name}\n")
+                for attr in host.attributes():
+                    f.write(f"{' '*4}{attr} {host.get(attr)}\n")
+
+    def asdict(self):
+        """
+        Return dict from list of hosts
+
+        returns:
+            hosts (List[dict])
+        """
+        hosts = []
+        for host in self.hosts:
+            host_dict= {'Host': host.name}
+            host_dict.update(host.attributes())
+            hosts.append(host_dict)
+        return hosts
+    
+    def get_host_with_index(self, name: str):
+        """
+        Get host object with index
+        
+        args:
+            name (str): host name
+
+        returns:
+            idx, Host
+        """
+        for idx, host in enumerate(self.hosts):
+            if name == host.name:
+                return idx, host
+        raise NameError(f"No name found in config, {name}")
