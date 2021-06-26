@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host
 from ssh_config.version import __version__
 from ssh_config import cli
+from ssh_config.client import EmptySSHConfig, WrongSSHConfig, HostExistsError
 
 logging.basicConfig(level=logging.INFO)
 sample = os.path.join(os.path.dirname(__file__), "sample")
@@ -116,26 +117,26 @@ class TestSSHConfig(unittest.TestCase):
     def test_asdict(self):
         configs = SSHConfig.load(sample)
         self.assertEqual(
-            {
-                "*": {"ServerAliveInterval": 40},
-                "server1": {"HostName": "203.0.113.76", "ServerAliveInterval": 200},
-                "server_cmd_1": {"HostName": "203.0.113.76", "Port": 2202},
-                "server_cmd_2": {
+            [{
+                {"Host": "*", "ServerAliveInterval": 40},
+                {"Host": "server1", "HostName": "203.0.113.76", "ServerAliveInterval": 200},
+                {"Host": "server_cmd_1", "HostName": "203.0.113.76", "Port": 2202},
+                {"Host": "server_cmd_2", 
                     "HostName": "203.0.113.76",
                     "Port": 22,
                     "User": "user",
                 },
-                "server_cmd_3": {
+                {"Host": "server_cmd_3", 
                     "HostName": "203.0.113.76",
                     "Port": 2202,
                     "User": "user",
                 },
-                "host_1 host_2": {
+                {"Host": "host_1 host_2", 
                     "HostName": "%h.test.com",
                     "Port": 2202,
                     "User": "user",
                 },
-            },
+            }],
             configs.asdict(),
         )
 
@@ -217,7 +218,7 @@ server_cmd_3   203.0.113.76   user   2202   None
             ]
         )
         sshconfig = SSHConfig.load(sample_add)
-        host = sshconfig.get("test_add", raise_exception=False)
+        host = sshconfig.get("test_add")
         self.assertIsNotNone(host)
         self.assertEqual(host.HostName, "238.0.4.1")
         os.remove(sample_add)
@@ -237,7 +238,7 @@ server_cmd_3   203.0.113.76   user   2202   None
             ]
         )
         sshconfig = SSHConfig.load(new_sample)
-        host = sshconfig.get("server1", raise_exception=False)
+        host = sshconfig.get("server1")
         self.assertEqual("203.0.113.76", host.HostName)
         self.assertEqual("~/.ssh/id_rsa_test", host.IdentityFile)
         os.remove(new_sample)
@@ -291,21 +292,23 @@ server_cmd_3   203.0.113.76   user   2202   None
         shutil.copy(sample, new_sample)
         cli.main(["ssh_config", "-f", new_sample, "rm", "-y", "server1"])
         sshconfig = SSHConfig.load(new_sample)
-        host = sshconfig.get("server1", raise_exception=False)
-        self.assertIsNone(host)
-        os.remove(new_sample)
+        with self.assertRaises(NameError):
+            sshconfig.get("server1")
+            os.remove(new_sample)
 
     def test_import(self):
         new_sample = os.path.join(os.path.dirname(__file__), "sample.import")
         shutil.copy(sample, new_sample)
         import_csv = os.path.join(os.path.dirname(__file__), "import.csv")
         cli.main(["ssh_config", "-f", new_sample, "import", "-q", "-y", import_csv])
-        sshconfig = SSHConfig.load(new_sample)
-        import_1 = sshconfig.remove("import1")
-        import_2 = sshconfig.remove("import2")
+        sshconfig = SSHConfig(new_sample)
+        sshconfig.remove("import1")
+        sshconfig.remove("import2")
         sshconfig.write()
-        self.assertTrue(import_1)
-        self.assertTrue(import_2)
+        with self.assertRaises(NameError):
+            sshconfig.get("import1")
+        with self.assertRaises(NameError):
+            sshconfig.get("import2")
         os.remove(new_sample)
 
     def test_export(self):
@@ -388,9 +391,9 @@ server_cmd_3         ansible_host=203.0.113.76         ansible_user=user
                 "User=ssh_user",
             ]
         )
-        configs = SSHConfig.load(new_sample)
+        config = SSHConfig(new_sample)
         self.assertEqual(
-            configs.get("bastion1").attributes(),
+            config.get("bastion1").attributes(),
             {
                 "HostName": "bastion.example.com",
                 "User": "ssh_user",
@@ -409,9 +412,9 @@ server_cmd_3         ansible_host=203.0.113.76         ansible_user=user
                 "server1",
             ]
         )
-        configs = SSHConfig.load(new_sample)
+        config = SSHConfig(new_sample)
         self.assertEqual(
-            configs.get("bastion1").attributes(),
+            config.get("bastion1").attributes(),
             {
                 "HostName": "bastion.example.com",
                 "User": "ssh_user",

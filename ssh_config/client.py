@@ -313,6 +313,22 @@ class SSHConfig(object):
         host.setname(new_name)
         self.hosts[idx] = host
 
+    def exists(self, name: str):
+        """
+        Check exist the host with name
+
+        args:
+            name (str): host name
+        
+        returns:
+            bool
+        """
+        try:
+            self.get_host_with_index(name)
+        except NameError:
+            return False
+        return True
+        
     def get(self, name: str):
         """
         get Host with name

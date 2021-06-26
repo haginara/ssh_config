@@ -127,13 +127,13 @@ class Add(BaseCommand):
             raise Exception(f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}")
         if is_bastion:
             attrs.update({"ProxyCommand": "none", "ForwardAgent": "yes"})
-
-        host = self.config.get(hostname, raise_exception=False)
+        
+        host = self.config.get(hostname)
         if host:
             print(f"{hostname} host already exist")
             return
         host = Host(hostname, attrs)
-        self.config.append(host)
+        self.config.add(host)
 
         print(f"{host}")
         if self.options.get("--yes") or input_is_yes(
@@ -191,7 +191,7 @@ class Update(BaseCommand):
                 print("No hosts found")
                 return
         else:
-            host = self.config.get(hostname, raise_exception=False)
+            host = self.config.get(hostname)
             if not host:
                 print("No host to be updated, %s" % hostname)
             if verbose:
@@ -220,7 +220,7 @@ class Rename(BaseCommand):
     def execute(self):
         old_hostname = self.options.get("<OLD_HOSTNAME>")
         new_hostname = self.options.get("<NEW_HOSTNAME>")
-        host = self.config.get(old_hostname, raise_exception=False)
+        host = self.config.get(old_hostname)
         if not host:
             print(f"No host to be updated, {old_hostname}")
         host.set_name(new_hostname)
@@ -246,7 +246,7 @@ class Rm(BaseCommand):
     def execute(self):
         verbose = self.options.get("--verbose")
         hostname = self.options.get("HOSTNAME")
-        host = self.config.get(hostname, raise_exception=False)
+        host = self.config.get(hostname)
         if host is None:
             print("No hostname")
             return
@@ -288,7 +288,7 @@ class Import(BaseCommand):
             for row in reader:
                 hostname = row.pop("Name")
                 host = Host(hostname, row)
-                self.config.append(host)
+                self.config.add(host)
                 if not queit:
                     print("Import: %s, %s" % (host.name, host.HostName))
 
@@ -427,7 +427,7 @@ class Bastion(BaseCommand):
             return
 
         for server in servers:
-            host = self.config.get(server, raise_exception=False)
+            host = self.config.get(server)
             if host is None:
                 print(f"{server} does not exist")
                 return
