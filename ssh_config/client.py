@@ -77,8 +77,11 @@ class Host(object):
         ("Match", str),
         ("AddKeysToAgent", str),
         ("BindInterface", str),
-        ("CanonialDomains", str),
-        ("CnonicalizeFallbackLocal", str),
+        ("CanonicalizeHostname", str), # yes, no
+        ("CanonicalizeMaxDots", int),
+        ("CanonicalDomains", str),
+        ("CanonicalizePermittedCNAMEs", str),
+        ("CanonicalizeFallbackLocal", str),
         ("IdentityAgent", str),
         ("PreferredAuthentications", str),
         ("ServerAliveInterval", int),
