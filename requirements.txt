@@ -2,4 +2,4 @@
 docopt==0.6.2
 jinja2==3.0.1
 pyparsing==2.4.7
-texttable==1.6.3
+texttable==1.6.4

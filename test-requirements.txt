@@ -1,8 +1,6 @@
 -i https://pypi.org/simple
 docopt==0.6.2
-Jinja2>=2.10.1
-markupsafe==1.1.1
-pyparsing==2.3.1
-six==1.12.0
-texttable==1.6.1
-contextlib2
+Jinja2==3.0.1
+pyparsing==2.4.7
+texttable==1.6.4
+pytest==6.2.4
