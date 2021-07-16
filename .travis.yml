@@ -1,6 +1,4 @@
 language: python
-dist: xenial
-sudo: false
 python:
   - "3.6"
   - "3.7"
@@ -10,4 +8,4 @@ python:
 install: 
   - pip install -r test-requirements.txt
 # Command to run tests
-script: python tests/ssh_config_test.py
+script: pytest tests/ssh_config_test.py
