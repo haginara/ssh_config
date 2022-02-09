@@ -1,9 +1,15 @@
 language: python
 dist: xenial
 sudo: false
+branches:
+  only:
+    - master
+    - main
+    - develop
 python:
-  - "3.6"
-  - "3.7"
+  - "3.8"
+  - "3.9"
+  - "3.10"
 # command to install dependencies
 install: 
   - pip install -r test-requirements.txt
