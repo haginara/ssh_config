@@ -1,6 +1,7 @@
 import os
 import stat
 import csv
+import argparse
 import platform
 import fnmatch
 
@@ -85,7 +86,9 @@ class Ls(BaseCommand):
 class Add(BaseCommand):
     """Add host.
 
-    Usage: add [options] <HOSTNAME> <attribute=value>...
+    Usage:
+        add [options] <HOSTNAME> <attribute=value>...
+        add [options] <name> <ssh connect string>
 
     Arguments:
         HOSTNAME Host name
@@ -104,7 +107,26 @@ class Add(BaseCommand):
         template = Template(self.__doc__, trim_blocks=True, lstrip_blocks=True)
         self.__doc__ = template.render(attrs=Host.attrs)
 
+    def add_with_connect_string(self, name, connect_str):
+        """add SSH Config with ssh connect string
+            username@hostname -p
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('')
+        
+        host = self.config.get(name, raise_exception=False)
+
+        
+        if host:
+            print(f"{name} host already exist")
+            return
+        host = Host(name, attrs)
+
+
     def execute(self):
+        name = self.options.get("<name>")
+        ssh_connect_str = self.options.get("<ssh connect string>")
+
         hostname = self.options.get("<HOSTNAME>")
         attrs = self.options.get("<attribute=value>", [])
         is_bastion = self.options.get("--bastion")

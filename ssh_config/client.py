@@ -1,32 +1,18 @@
 from __future__ import print_function, absolute_import
 import logging
 from pyparsing import (
-    CaselessLiteral,
     White,
     Word,
-    alphanums,
+    alphas,
     Group,
     SkipTo,
-    OneOrMore,
-    pythonStyleComment,
     Dict,
     lineEnd,
     Suppress,
-    indentedBlock,
     ParseException,
 )
 
-logger = logging.getLogger(__name__)
-
-
-class EmptySSHConfig(Exception):
-    def __init__(self, path):
-        super().__init__("Empty SSH Config: %s" % path)
-
-
-class WrongSSHConfig(Exception):
-    def __init__(self, path):
-        super().__init__("Wrong SSH Config: %s" % path)
+logger = logging.getLogger("ssh_config")
 
 
 class Host(object):

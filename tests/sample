@@ -1,7 +1,10 @@
+# Comment: Default Configuration
+CompressionLevel 1
+
 Host server1
     HostName 203.0.113.76
     ServerAliveInterval 200
-Host *
+host *
     ServerAliveInterval 40
 Host server_cmd_1
     HostName 203.0.113.76
@@ -18,3 +21,7 @@ Host host_1 host_2
     hostname %h.test.com
     port 2202
     User user
+Host unidentifieed_host
+hostname 127.0.0.1
+port 2202
+User user
