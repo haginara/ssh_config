@@ -94,6 +94,7 @@ def get_attributes():
 @click.argument("name")
 @click.pass_context
 def interactive_shell(ctx, name):
+    """Interative shell for Host"""
     config = ctx.obj["config"]
     if not config.exists(name):
         click.secho(f"{name} does not exist", fg="red")
