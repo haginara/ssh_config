@@ -11,7 +11,14 @@ from ..client import Host
 
 from .base import BaseCommand
 from .base import ArgumentRequired
-from .utils import table_print, simple_print, field_print, ssh_format_print, grep, input_is_yes
+from .utils import (
+    table_print,
+    simple_print,
+    field_print,
+    ssh_format_print,
+    grep,
+    input_is_yes,
+)
 
 
 class Gen(BaseCommand):
@@ -110,6 +117,7 @@ class Add(BaseCommand):
         {{ attr }}
         {% endfor %}
     """
+
     def pre_command(self):
         template = Template(self.__doc__, trim_blocks=True, lstrip_blocks=True)
         self.__doc__ = template.render(attrs=Host.attrs)
@@ -124,10 +132,12 @@ class Add(BaseCommand):
                 for attr in self.options.get("<attribute=value>", [])
             }
         except Exception as e:
-            raise Exception(f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}")
+            raise Exception(
+                f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}"
+            )
         if is_bastion:
             attrs.update({"ProxyCommand": "none", "ForwardAgent": "yes"})
-        
+
         if self.config.exists(hostname):
             print(f"{hostname} host already exist")
             return
@@ -160,6 +170,7 @@ class Update(BaseCommand):
         {{ attr }}
         {% endfor %}
     """
+
     def pre_command(self):
         template = Template(self.__doc__, trim_blocks=True, lstrip_blocks=True)
         self.__doc__ = template.render(attrs=Host.attrs)
@@ -175,10 +186,12 @@ class Update(BaseCommand):
                 for attr in self.options.get("<attribute=value>", [])
             }
         except Exception as e:
-            raise Exception(f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}")
+            raise Exception(
+                f"<attribute=value> like options aren't provided, {e}, {self.options.get('<attribute=value>')}"
+            )
         use_pattern = self.options.get("--use-pattern")
         if use_pattern:
-            """ use-pattern is only accept update, not add """
+            """use-pattern is only accept update, not add"""
             hosts = [
                 host for host in self.config if fnmatch.fnmatch(host.name, hostname)
             ]
@@ -216,6 +229,7 @@ class Rename(BaseCommand):
         -y --yes            Force answer yes
         -h --help           Shwo this screen
     """
+
     def execute(self):
         old_hostname = self.options.get("<OLD_HOSTNAME>")
         new_hostname = self.options.get("<NEW_HOSTNAME>")
@@ -315,8 +329,7 @@ class Export(BaseCommand):
     """
 
     def export_csv(self, fields, essential=False):
-        """Export csv file
-        """
+        """Export csv file"""
         if essential:
             header = ["HostName", "User", "Port", "IdentityFile"]
         elif fields:
@@ -328,7 +341,7 @@ class Export(BaseCommand):
         for host in self.config:
             values = [host.name]
             for name in header:
-                values.append(host.get(name, ''))
+                values.append(host.get(name, ""))
             data += f"{','.join([str(value) for value in values])}\n"
         return data
 
@@ -398,10 +411,10 @@ class Ping(BaseCommand):
         if host is None:
             raise ArgumentRequired
         # Print plain
-        if platform.system() == 'Windows':
-            run(args=['ping', self.config.get(host).HostName])
+        if platform.system() == "Windows":
+            run(args=["ping", self.config.get(host).HostName])
         else:
-            run(args=['ping', '-t', '4', self.config.get(host).HostName])
+            run(args=["ping", "-t", "4", self.config.get(host).HostName])
 
 
 class Bastion(BaseCommand):

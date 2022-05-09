@@ -12,13 +12,13 @@ https://linux.die.net/man/5/ssh_config
 
 Why
 ---
-I don't remember all the servers I am managing. Also all servers requires all different configuration to connec to it. I know ~.ssh/config can handle this kind of issue. I want it to handle this file easier.
+I don't remember all the servers I am managing. Also all servers require all different configurations to connect to it. I know ~.ssh/config can handle this kind of issue. I want it to handle this file easier.
 
-Yes, I am not sure this is eaiser way to handle it. but I am trying.
+Yes, I am not sure this is easier way to handle it. but I am trying.
 
 Requirements
 ------------
-    After 0.0.15, Python27 is not supported.
+   After 0.0.15, Python27 is not supported.
 
 Python 3.6 or higher
 
@@ -33,28 +33,28 @@ Usage
 ```
 ssh-config <version>
 
-    Usage:
-        ssh-config [options] <command> [<args>...]
+   Usage:
+       ssh-config [options] <command> [<args>...]
 
-    Options:
-        -h --help           Show this screen.
-        -v --version        Show version.
-        -V --verbose        Verbose output
-        -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
+   Options:
+       -h --help           Show this screen.
+       -v --version        Show version.
+       -V --verbose        Verbose output
+       -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
 
-    Commands:
-        gen         Generate ssh config file
-        ls          Show list of Hosts in client file
-        get         Get ssh client config with Name
-        add         Add new Host configuration
-        update      Update host configuration
-        rename      Update host configuration
-        rm          Remove exist Host configuration
-        import      Import Hosts from csv file to SSH Client config
-        export      Export Hosts to csv/ansible format
-        bastion     Bastion register/use
-        ping        Send ping to selected host
-        version     Show version information
+   Commands:
+       gen         Generate ssh config file
+       ls          Show list of Hosts in client file
+       get         Get ssh client config with Name
+       add         Add new Host configuration
+       update      Update host configuration
+       rename      Update host configuration
+       rm          Remove exist Host configuration
+       import      Import Hosts from csv file to SSH Client config
+       export      Export Hosts to csv/ansible format
+       bastion     Bastion register/use
+       ping        Send ping to selected host
+       version     Show version information
 
 ```
 
@@ -63,7 +63,7 @@ Use-cases
 
 #### List hosts
 ```
-$ ssh-config ls 
+$ ssh-config ls
 # It shows name and HostName attribute
 server1: 203.0.113.76
 *: None
@@ -84,7 +84,7 @@ $ ssh-config add --update -p "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
 
 ##### Remove host
 ```
-$ ssh-config rm "server_3" 
+$ ssh-config rm "server_3"
 ```
 
 ### Using pattern to get list or update exist hosts
@@ -114,8 +114,8 @@ ssh-config ls --only-name | xargs -I{} ssh-copy-id -i ~/.ssh/id_rsa {}
 ssh-config export ansible -g linux
 
 [linux]
-server1              ansible_host=203.0.113.76        
-server_cmd_1         ansible_host=203.0.113.76        
-server_cmd_2         ansible_host=203.0.113.76         ansible_user=user      
-server_cmd_3         ansible_host=203.0.113.76         ansible_user=user      
+server1              ansible_host=203.0.113.76       
+server_cmd_1         ansible_host=203.0.113.76       
+server_cmd_2         ansible_host=203.0.113.76         ansible_user=user     
+server_cmd_3         ansible_host=203.0.113.76         ansible_user=user     
 ```
