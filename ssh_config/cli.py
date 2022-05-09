@@ -111,14 +111,36 @@ def add_config(ctx, name):
 
 @cli.command('update')
 @click.argument('name')
+@click.argument("attributes", nargs=-1, metavar="<key=value>")
 @click.pass_context
-def update_config(ctx, name):
-    config = ctx.onj['config']
+def update_config(ctx, name, attributes):
+    """Update the ssh Host config Attribute key=value format"""
+    config = ctx.obj['config']
 
     if not config.exists(name):
         click.secho(f"{name} already exists, use `update` instead of `add`", fg='red')
         raise SystemExit
 
+    host = config.get(name)
+    click.echo(host)
+    click.echo("="*25)
+    for attribute in attributes:
+        try:
+            key, value = attribute.split("=")
+            for attr, _ in Host.attrs:
+                if attr.lower() == key.lower():
+                    config.update(name, {attr: value})
+                    break
+            else:
+                raise Exception(f"No exists Attribute: {key}")
+        except Exception as e:
+            click.secho(f"Wrong format of attribute, {e}", fg='red')
+            raise SystemExit
+        click.echo(host)
+
+    if click.confirm("Information is correct ?", abort=False):
+        config.write()
+        click.secho("Updated!", fg="green")
 
 
 @cli.command('rename')
