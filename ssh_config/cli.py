@@ -68,7 +68,7 @@ def posix_shell(chan):
 
 
 @click.group()
-@click.option("--path", default=os.path.expanduser("~/.ssh/config"))
+@click.option("-f", "--path", default=os.path.expanduser("~/.ssh/config"), show_default=True)
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(__version__)
 @click.pass_context
@@ -80,7 +80,8 @@ def cli(ctx, path, debug):
     if os.path.exists(path):
         ctx.obj["config"] = get_sshconfig(path)
     else:
-        raise SystemExit(f"SSH config does not exists, {path}")
+        if ctx.invoked_subcommand != 'gen':
+            raise SystemExit(f"SSH config does not exists, {path}")
 
 
 @cli.command("attributes")
@@ -142,14 +143,14 @@ def gen_config(ctx):
             os.mkdir(ssh_path)
         open(config_path, "w").close()
         os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
-        print(f"Created at {config_path}")
+        click.echo(f"Created at {config_path}")
     else:
         if click.confirm(
             f"Do you want to overwrite (file: {config_path})?", abort=True
         ):
             open(config_path, "w").close()
             os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
-            print(f"Created at {config_path}")
+            click.echo(f"Created at {config_path}")
 
 
 @cli.command("ls")
@@ -163,6 +164,7 @@ def list_config(ctx, l):
             click.echo(f"{host.name:20s}{host.HostName}")
         else:
             click.echo(host.name)
+    return 0
 
 
 @cli.command("get")
@@ -176,6 +178,7 @@ def get_config(ctx, name):
         raise SystemExit()
     selected = config.get(name)
     click.echo(selected)
+    return 0
 
 
 @cli.command("add")
@@ -287,4 +290,8 @@ if __name__ == "__main__":
         [] ping        Send ping to selected host
         [-] version     Show version information
     """
-    cli()
+    try:
+        cli()
+    except SystemExit as e:
+        if e.code != 0:
+            raise
