@@ -28,7 +28,7 @@ def write_config(config, msg, success):
 @click.option('--debug/--no-debug', default=False)
 @click.version_option(__version__)
 @click.pass_context
-def cli(ctx, path, debug, version):
+def cli(ctx, path, debug):
     ctx.ensure_object(dict)
     ctx.obj['DEBUG'] = debug
     ctx.obj['path'] = path
@@ -44,6 +44,60 @@ def get_attributes():
     """Print possible attributes for Host"""
     for attr, attr_type in Host.attrs:
         click.echo(f"{attr}")
+
+
+@cli.command('ssh')
+@click.argument("name")
+@click.pass_context
+def ssh(ctx, name):
+    config = ctx.obj['config']
+    if not config.exists(name):
+        click.secho(f"{name} does not exist", fg='red')
+        raise SystemExit
+    host = config.get(name)
+    import paramiko
+    import getpass
+    import time
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    if host.IdentityFilee:
+        try:
+            pkey = paramiko.RSAKey.from_private_key_file(host.IdentityFile)
+        except paramiko.PasswordRequiredException:
+            passwd = getpass.getpass(f"Enter passphrase for {host.IdentityFile}: ")
+            pkey = paramiko.RSAKey.from_private_key_file(host.IdentityFile, password=passwd)
+        except Exception as detail:
+            click.secho(f"Error: Create_key: {detail}", fg='red')
+    else:
+        pkey = None
+
+    # connect(hostname, port=22, username=None, password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=True, compress=False, sock=None, gss_auth=False, gss_kex=False, gss_deleg_creds=True, gss_host=None, banner_timeout=None, auth_timeout=None, gss_trust_dns=True, passphrase=None, disabled_algorithms=None)¶
+    click.echo(f"{host.HostName}, {host.User}, {pkey}")
+    if pkey is None:
+        password = getpass.getpass(f"{host.User}@{name}'s password: ")
+    else:
+        pasword = None
+    try:
+        ssh.connect(host.HostName, username=host.User, port=host.Port, password=password, pkey=pkey)
+        channel = ssh.get_transport().open_session()
+        channel.get_pty()
+        channel.invoke_shell()
+        while True:
+            while True:
+                if channel.recv_ready():
+                    output = channel.recv(1024)
+                    print(output.decode(), end='')
+                else:
+                    time.sleep(0.5)
+                if not(channel.recv_ready()):
+                    break
+            command = input()
+            if command == 'exit':
+                break
+            channel.send(command + "\n")
+    except Exception as e:
+        click.secho(f"Failed to connect to ssh, {e}", fg='red')
+    ssh.close()
 
 
 @cli.command('gen')
