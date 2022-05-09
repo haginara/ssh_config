@@ -18,6 +18,12 @@ def get_sshconfig(configpath, create=True):
     return sshconfig
 
 
+def write_config(config, msg, success):
+    if click.confirm(msg, abort=False):
+        config.write()
+        click.secho(success, fg="green")
+
+
 @click.group()
 @click.option('--path', default=os.path.expanduser("~/.ssh/config"))
 @click.option('--debug/--no-debug', default=False)
@@ -104,9 +110,7 @@ def add_config(ctx, name):
     host = Host(name, attrs)
     config.add(host)
     click.echo(host)
-    if click.confirm("Information is correct ?", abort=False):
-        config.write()
-        click.secho("Addded!", fg="green")
+    write_config(config, "Information is correct ?", "Added!")
 
 
 @cli.command('update')
@@ -118,7 +122,7 @@ def update_config(ctx, name, attributes):
     config = ctx.obj['config']
 
     if not config.exists(name):
-        click.secho(f"{name} already exists, use `update` instead of `add`", fg='red')
+        click.secho(f"{name} does not exist, use `update` instead of `add`", fg='red')
         raise SystemExit
 
     host = config.get(name)
@@ -138,23 +142,35 @@ def update_config(ctx, name, attributes):
             raise SystemExit
         click.echo(host)
 
-    if click.confirm("Information is correct ?", abort=False):
-        config.write()
-        click.secho("Updated!", fg="green")
+    write_config(config, "Information is correct ?", "Updated!")
 
 
 @cli.command('rename')
 @click.argument('name')
+@click.argument('new_name')
 @click.pass_context
-def rename_config(ctx, name):
-    config = ctx.onj['config']
+def rename_config(ctx, name, new_name):
+    config = ctx.obj['config']
+
+    if not config.exists(name):
+        click.secho(f"{name} does not exist", fg='red')
+        raise SystemExit
+    config.get(name).set_name(new_name)
+    click.echo(config.get(new_name))
+    write_config(config, "Information is correct ?", "Renamed!")
 
 
 @cli.command('remove')
 @click.argument('name')
 @click.pass_context
 def remove_config(ctx, name):
-    config = ctx.onj['config']
+    config = ctx.obj['config']
+    if not config.exists(name):
+        click.secho(f"{name} does not exist", fg='red')
+        raise SystemExit
+    click.echo(config.get(name))
+    config.remove(name)
+    write_config(config, "Do you want to remove ?", "Removed!")
 
 
 if __name__ == '__main__':
