@@ -25,7 +25,7 @@ def test_get_sshconfig():
 def test_get_attributes():
     """Test get attributes"""
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ['attributes'])
+    result = runner.invoke(cli.cli, ['-f', sample, 'attributes'])
     print(result)
     assert result.exit_code == 0
     assert 'HostName' in result.output
