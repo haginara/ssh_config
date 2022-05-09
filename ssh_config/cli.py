@@ -3,7 +3,6 @@
 from __future__ import print_function, absolute_import
 import os
 import stat
-import sys
 
 import click
 
@@ -27,11 +26,13 @@ def write_config(config, msg, success):
 @click.group()
 @click.option('--path', default=os.path.expanduser("~/.ssh/config"))
 @click.option('--debug/--no-debug', default=False)
+@click.version_option(__version__)
 @click.pass_context
-def cli(ctx, path, debug):
+def cli(ctx, path, debug, version):
     ctx.ensure_object(dict)
     ctx.obj['DEBUG'] = debug
     ctx.obj['path'] = path
+
     if os.path.exists(path):
         ctx.obj['config'] = get_sshconfig(path)
     else:
@@ -186,17 +187,17 @@ if __name__ == '__main__':
         -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
 
     Commands:
-        gen         Generate ssh config file
-        ls          Show list of Hosts in client file
-        get         Get ssh client config with Name
-        add         Add new Host configuration
-        update      Update host configuration
-        rename      Update host configuration
-        rm          Remove exist Host configuration
-        import      Import Hosts from csv file to SSH Client config
-        export      Export Hosts to csv format
-        bastion     Bastion register/use
-        ping        Send ping to selected host
-        version     Show version information
+        [x] gen         Generate ssh config file
+        [x] ls          Show list of Hosts in client file
+        [x] get         Get ssh client config with Name
+        [x] add         Add new Host configuration
+        [x] update      Update host configuration
+        [x] rename      Update host configuration
+        [x] rm          Remove exist Host configuration
+        [] import      Import Hosts from csv file to SSH Client config
+        [] export      Export Hosts to csv format
+        [] bastion     Bastion register/use
+        [] ping        Send ping to selected host
+        [-] version     Show version information
     """
     cli()
