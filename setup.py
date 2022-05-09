@@ -12,7 +12,7 @@ version = _locals["__version__"]
 
 install_requires = [
     "pyparsing",
-    "docopt",
+    "click",
     "texttable",
     "Jinja2",
 ]
