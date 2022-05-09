@@ -41,6 +41,10 @@ class Host(object):
     Host object contains information of Host
     """
     attrs = [
+        ("HostName", str),
+        ("User", str),
+        ("Port", int),
+        ("IdentityFile", str),
         ("AddressFamily", str),  # any, inet, inet6
         ("BatchMode", str),
         ("BindAddress", str),
@@ -65,10 +69,6 @@ class Host(object):
         ("GatewayPorts", str),  # yes, no
         ("GlobalKnownHostsFile", str),  # yes, no
         ("GSSAPIAuthentication", str),  # yes, no
-        ("HostName", str),
-        ("User", str),
-        ("Port", int),
-        ("IdentityFile", str),
         ("LocalCommand", str),
         ("LocalForward", str),
         ("LogLevel", str),
@@ -77,7 +77,7 @@ class Host(object):
         ("Match", str),
         ("AddKeysToAgent", str),
         ("BindInterface", str),
-        ("CanonicalizeHostname", str), # yes, no
+        ("CanonicalizeHostname", str),  # yes, no
         ("CanonicalizeMaxDots", int),
         ("CanonicalDomains", str),
         ("CanonicalizePermittedCNAMEs", str),

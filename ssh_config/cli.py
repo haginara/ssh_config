@@ -5,17 +5,137 @@ import os
 import stat
 import sys
 
-from docopt import docopt
-from docopt import DocoptExit
+import click
 
-import ssh_config
-from .commands import commands
-from .commands.utils import input_is_yes
+from ssh_config.client import Host
 from .client import SSHConfig
 from .version import __version__
 
 
-class SSHConfigDocOpt:
+def get_sshconfig(configpath, create=True):
+    config_fullpath = os.path.expanduser(configpath)
+    sshconfig = SSHConfig(config_fullpath)
+    return sshconfig
+
+
+@click.group()
+@click.option('--path', default=os.path.expanduser("~/.ssh/config"))
+@click.option('--debug/--no-debug', default=False)
+@click.pass_context
+def cli(ctx, path, debug):
+    ctx.ensure_object(dict)
+    ctx.obj['DEBUG'] = debug
+    ctx.obj['path'] = path
+    if os.path.exists(path):
+        ctx.obj['config'] = get_sshconfig(path)
+    else:
+        raise SystemExit(f"SSH config does not exists, {path}")
+
+
+@cli.command('attributes')
+def get_attributes():
+    """Print possible attributes for Host"""
+    for attr, attr_type in Host.attrs:
+        click.echo(f"{attr}")
+
+
+@cli.command('gen')
+@click.pass_context
+def gen_config(ctx):
+    """ Generate the ssh config"""
+    config_path = ctx.obj['path']
+    ssh_path = os.path.dirname(config_path)
+    if not os.path.exists(config_path):
+        if not os.path.exists(ssh_path):
+            os.mkdir(ssh_path)
+        open(config_path, "w").close()
+        os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
+        print(f"Created at {config_path}")
+    else:
+        if click.confirm(f"Do you want to overwrite (file: {config_path})?", abort=True):
+            open(config_path, "w").close()
+            os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
+            print(f"Created at {config_path}")
+
+
+@cli.command('ls')
+@click.option("-l", is_flag=True, help="More detail")
+@click.pass_context
+def list_config(ctx, l):
+    """Enumerate the configs"""
+    config = ctx.obj['config']
+    for host in config:
+        if l:
+            click.echo(f"{host.name:20s}{host.HostName}")
+        else:
+            click.echo(host.name)
+
+
+@cli.command('get')
+@click.argument('name')
+@click.pass_context
+def get_config(ctx, name):
+    """Get ssh config with name"""
+    config = ctx.obj['config']
+    if not config.exists(name):
+        click.secho(f"No host found, {name}", fg='red')
+        raise SystemExit()
+    selected = config.get(name)
+    click.echo(selected)
+
+
+@cli.command('add')
+@click.argument('name')
+@click.pass_context
+def add_config(ctx, name):
+    """Add SSH Config into config file"""
+    config = ctx.obj['config']
+    if config.exists(name):
+        click.secho(f"{name} already exists, use `update` instead of `add`", fg='red')
+        raise SystemExit
+    hostname = click.prompt('HostName')
+    user = click.prompt('User', default=os.getenv('USER'), show_default=True)
+    port = click.prompt('Port', type=int, default=22, show_default=True)
+    attrs = {
+        'HostName': hostname,
+        'User': user,
+        'Port': port,
+    }
+    host = Host(name, attrs)
+    config.add(host)
+    click.echo(host)
+    if click.confirm("Information is correct ?", abort=False):
+        config.write()
+        click.secho("Addded!", fg="green")
+
+
+@cli.command('update')
+@click.argument('name')
+@click.pass_context
+def update_config(ctx, name):
+    config = ctx.onj['config']
+
+    if not config.exists(name):
+        click.secho(f"{name} already exists, use `update` instead of `add`", fg='red')
+        raise SystemExit
+
+
+
+@cli.command('rename')
+@click.argument('name')
+@click.pass_context
+def rename_config(ctx, name):
+    config = ctx.onj['config']
+
+
+@cli.command('remove')
+@click.argument('name')
+@click.pass_context
+def remove_config(ctx, name):
+    config = ctx.onj['config']
+
+
+if __name__ == '__main__':
     """ssh-config {version}
 
     Usage:
@@ -41,51 +161,4 @@ class SSHConfigDocOpt:
         ping        Send ping to selected host
         version     Show version information
     """
-    def __init__(self, *argv, **kwargs):
-        try:
-            docstring = self.__doc__.format(version=__version__)
-            options = docopt(docstring, *argv, **kwargs)
-        except DocoptExit:
-            raise SystemExit(docstring)
-
-        if options.get("<command>") is None:
-            raise SystemExit(docstring)
-
-        command_name = options["<command>"].title()
-        command_options = options.get("<args>")
-        config_path = options.get("--config")
-        sshconfig = self.get_sshconfig(config_path, create=False)
-        command_cls = getattr(commands, command_name)
-        command = command_cls(sshconfig, command_options, options)
-        command.execute()
-
-    def get_sshconfig(self, configpath, create=True):
-        sshconfig = None
-        config_fullpath = os.path.expanduser(configpath)
-        if os.path.exists(config_fullpath):
-            sshconfig = SSHConfig(config_fullpath)
-        elif create:
-            answer = input_is_yes(
-                f"{config_fullpath} does not exists, Do you want to create new one",
-                default="n",
-            )
-            if answer:
-                open(config_fullpath, "w").close()
-                os.chmod(config_fullpath, stat.S_IREAD | stat.S_IWRITE)
-                print("Created!")
-        
-        sshconfig = SSHConfig(config_fullpath)
-        return sshconfig
-
-
-def main(argv=sys.argv):
-    try:
-        SSHConfigDocOpt(
-            argv[1:], options_first=True, version="ssh_config %s" % __version__
-        )
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupted...")
-
-
-if __name__ == "__main__":
-    main()
+    cli()
