@@ -3,6 +3,17 @@
 from __future__ import print_function, absolute_import
 import os
 import stat
+import getpass
+
+import socket
+import sys
+# windows does not have termios...
+try:
+    import termios
+    import tty
+    has_termios = True
+except ImportError:
+    has_termios = False
 
 import click
 
@@ -21,6 +32,37 @@ def write_config(config, msg, success):
     if click.confirm(msg, abort=False):
         config.write()
         click.secho(success, fg="green")
+
+
+def posix_shell(chan):
+    from paramiko.py3compat import u
+    import select
+
+    oldtty = termios.tcgetattr(sys.stdin)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        tty.setcbreak(sys.stdin.fileno())
+        chan.settimeout(0.0)
+
+        while True:
+            r, w, e = select.select([chan, sys.stdin], [], [])
+            if chan in r:
+                try:
+                    x = u(chan.recv(1024))
+                    if len(x) == 0:
+                        break
+                    sys.stdout.write(x)
+                    sys.stdout.flush()
+                except socket.timeout:
+                    pass
+            if sys.stdin in r:
+                x = sys.stdin.read(1)
+                if len(x) == 0:
+                    break
+                chan.send(x)
+
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
 
 @click.group()
@@ -49,52 +91,30 @@ def get_attributes():
 @cli.command('ssh')
 @click.argument("name")
 @click.pass_context
-def ssh(ctx, name):
+def interactive_shell(ctx, name):
     config = ctx.obj['config']
     if not config.exists(name):
         click.secho(f"{name} does not exist", fg='red')
         raise SystemExit
     host = config.get(name)
     import paramiko
-    import getpass
-    import time
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if host.IdentityFilee:
-        try:
-            pkey = paramiko.RSAKey.from_private_key_file(host.IdentityFile)
-        except paramiko.PasswordRequiredException:
-            passwd = getpass.getpass(f"Enter passphrase for {host.IdentityFile}: ")
-            pkey = paramiko.RSAKey.from_private_key_file(host.IdentityFile, password=passwd)
-        except Exception as detail:
-            click.secho(f"Error: Create_key: {detail}", fg='red')
-    else:
-        pkey = None
+    if host.IdentityFile:
+        identity_file = os.path.expanduser(host.IdentityFile)
 
-    # connect(hostname, port=22, username=None, password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=True, compress=False, sock=None, gss_auth=False, gss_kex=False, gss_deleg_creds=True, gss_host=None, banner_timeout=None, auth_timeout=None, gss_trust_dns=True, passphrase=None, disabled_algorithms=None)¶
-    click.echo(f"{host.HostName}, {host.User}, {pkey}")
-    if pkey is None:
+    port = host.Port or 22
+    click.echo(f"{host.HostName}, {host.User}, {port}, {host.IdentityFile}")
+    if identity_file is None:
         password = getpass.getpass(f"{host.User}@{name}'s password: ")
     else:
-        pasword = None
+        password = None
     try:
-        ssh.connect(host.HostName, username=host.User, port=host.Port, password=password, pkey=pkey)
+        ssh.connect(host.HostName, username=host.User, port=port, password=password, key_filename=identity_file, allow_agent=True)
         channel = ssh.get_transport().open_session()
         channel.get_pty()
         channel.invoke_shell()
-        while True:
-            while True:
-                if channel.recv_ready():
-                    output = channel.recv(1024)
-                    print(output.decode(), end='')
-                else:
-                    time.sleep(0.5)
-                if not(channel.recv_ready()):
-                    break
-            command = input()
-            if command == 'exit':
-                break
-            channel.send(command + "\n")
+        posix_shell(channel)
     except Exception as e:
         click.secho(f"Failed to connect to ssh, {e}", fg='red')
     ssh.close()
