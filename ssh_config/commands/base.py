@@ -32,8 +32,7 @@ class BaseCommand(object):
         self.g_options = g_options
 
     def pre_command(self):
-        """ Pre command function before parse options
-        """
+        """Pre command function before parse options"""
         pass
 
     def execute(self):

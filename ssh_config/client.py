@@ -40,6 +40,7 @@ class Host(object):
     """
     Host object contains information of Host
     """
+
     attrs = [
         ("HostName", str),
         ("User", str),
@@ -179,29 +180,28 @@ class Host(object):
 
 
 class SSHConfig(object):
-    """ ssh_config file.
-    """
-    __slots__ = ['hosts', 'raw', 'config_path']
+    """ssh_config file."""
+
+    __slots__ = ["hosts", "raw", "config_path"]
 
     def __init__(self, path=None):
         """
         Initialize an instance of a ssh_config file
         params:
              path(str or None): the path of ssh_config file to manage
-        
+
         returns:
             None
         """
-        
+
         self.hosts = []
         self.raw = None
         if path is None:
             self.config_path = os.path.expanduser("~/.ssh/config")
         else:
             self.config_path = path
-        
+
         self.load_hosts()
-    
 
     def __repr__(self) -> str:
         return f"SSHConfig<Path:{self.config_path}>"
@@ -217,7 +217,7 @@ class SSHConfig(object):
 
     @classmethod
     def create(cls, config_path: str):
-        """ 
+        """
         Load ssh-config file with path
 
         params:
@@ -229,7 +229,7 @@ class SSHConfig(object):
         logger.debug("Create: %s" % config_path)
         if os.path.exists(config_path):
             raise FileExistsError(config_path)
-        open(config_path, 'w').write("")
+        open(config_path, "w").write("")
         ssh_config = cls(config_path)
         return ssh_config
 
@@ -238,7 +238,7 @@ class SSHConfig(object):
         Load the ssh_config file into `hosts` with config_path
         """
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 self.raw = f.read()
                 if len(self.raw) < 1:
                     "If file is empty, it returns None"
@@ -283,7 +283,9 @@ class SSHConfig(object):
         HostBlock = Dict(Group(HostDecl + block))
 
         try:
-            parsed = OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
+            parsed = (
+                OneOrMore(HostBlock).ignore(pythonStyleComment).parseString(self.raw)
+            )
         except ParseException as e:
             return None
 
@@ -296,14 +298,14 @@ class SSHConfig(object):
         params:
             name (str): Name of Host
             attrs (dict): Attributes
-        
+
         returns:
             None
         """
         idx, host = self.get_host_with_index(name)
         host.update(attrs)
         self.hosts[idx] = host
-        
+
     def rename(self, name: str, new_name: str):
         """
         Rename the host name(pattern)
@@ -311,7 +313,7 @@ class SSHConfig(object):
         args:
             name: old name
             new_name: new name
-        
+
         returns:
             None
         """
@@ -325,7 +327,7 @@ class SSHConfig(object):
 
         args:
             name (str): host name
-        
+
         returns:
             bool
         """
@@ -341,13 +343,12 @@ class SSHConfig(object):
 
         args:
             name (str): host name
-        
+
         returns:
             Host
         """
         idx, host = self.get_host_with_index(name)
         return host
-        
 
     def add(self, host: Host):
         """
@@ -374,7 +375,6 @@ class SSHConfig(object):
         """
         idx, host = self.get_host_with_index(name)
         self.hosts.remove(host)
-        
 
     def write(self, filename=None):
         """
@@ -402,15 +402,15 @@ class SSHConfig(object):
         """
         hosts = []
         for host in self.hosts:
-            host_dict = {'Host': host.name}
+            host_dict = {"Host": host.name}
             host_dict.update(host.attributes())
             hosts.append(host_dict)
         return hosts
-    
+
     def get_host_with_index(self, name: str):
         """
         Get host object with index
-        
+
         args:
             name (str): host name
 

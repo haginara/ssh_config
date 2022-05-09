@@ -7,10 +7,12 @@ import getpass
 
 import socket
 import sys
+
 # windows does not have termios...
 try:
     import termios
     import tty
+
     has_termios = True
 except ImportError:
     has_termios = False
@@ -66,38 +68,39 @@ def posix_shell(chan):
 
 
 @click.group()
-@click.option('--path', default=os.path.expanduser("~/.ssh/config"))
-@click.option('--debug/--no-debug', default=False)
+@click.option("--path", default=os.path.expanduser("~/.ssh/config"))
+@click.option("--debug/--no-debug", default=False)
 @click.version_option(__version__)
 @click.pass_context
 def cli(ctx, path, debug):
     ctx.ensure_object(dict)
-    ctx.obj['DEBUG'] = debug
-    ctx.obj['path'] = path
+    ctx.obj["DEBUG"] = debug
+    ctx.obj["path"] = path
 
     if os.path.exists(path):
-        ctx.obj['config'] = get_sshconfig(path)
+        ctx.obj["config"] = get_sshconfig(path)
     else:
         raise SystemExit(f"SSH config does not exists, {path}")
 
 
-@cli.command('attributes')
+@cli.command("attributes")
 def get_attributes():
     """Print possible attributes for Host"""
     for attr, attr_type in Host.attrs:
         click.echo(f"{attr}")
 
 
-@cli.command('ssh')
+@cli.command("ssh")
 @click.argument("name")
 @click.pass_context
 def interactive_shell(ctx, name):
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     if not config.exists(name):
-        click.secho(f"{name} does not exist", fg='red')
+        click.secho(f"{name} does not exist", fg="red")
         raise SystemExit
     host = config.get(name)
     import paramiko
+
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     if host.IdentityFile:
@@ -110,21 +113,28 @@ def interactive_shell(ctx, name):
     else:
         password = None
     try:
-        ssh.connect(host.HostName, username=host.User, port=port, password=password, key_filename=identity_file, allow_agent=True)
+        ssh.connect(
+            host.HostName,
+            username=host.User,
+            port=port,
+            password=password,
+            key_filename=identity_file,
+            allow_agent=True,
+        )
         channel = ssh.get_transport().open_session()
         channel.get_pty()
         channel.invoke_shell()
         posix_shell(channel)
     except Exception as e:
-        click.secho(f"Failed to connect to ssh, {e}", fg='red')
+        click.secho(f"Failed to connect to ssh, {e}", fg="red")
     ssh.close()
 
 
-@cli.command('gen')
+@cli.command("gen")
 @click.pass_context
 def gen_config(ctx):
-    """ Generate the ssh config"""
-    config_path = ctx.obj['path']
+    """Generate the ssh config"""
+    config_path = ctx.obj["path"]
     ssh_path = os.path.dirname(config_path)
     if not os.path.exists(config_path):
         if not os.path.exists(ssh_path):
@@ -133,18 +143,20 @@ def gen_config(ctx):
         os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
         print(f"Created at {config_path}")
     else:
-        if click.confirm(f"Do you want to overwrite (file: {config_path})?", abort=True):
+        if click.confirm(
+            f"Do you want to overwrite (file: {config_path})?", abort=True
+        ):
             open(config_path, "w").close()
             os.chmod(config_path, stat.S_IREAD | stat.S_IWRITE)
             print(f"Created at {config_path}")
 
 
-@cli.command('ls')
+@cli.command("ls")
 @click.option("-l", is_flag=True, help="More detail")
 @click.pass_context
 def list_config(ctx, l):
     """Enumerate the configs"""
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     for host in config:
         if l:
             click.echo(f"{host.name:20s}{host.HostName}")
@@ -152,35 +164,35 @@ def list_config(ctx, l):
             click.echo(host.name)
 
 
-@cli.command('get')
-@click.argument('name')
+@cli.command("get")
+@click.argument("name")
 @click.pass_context
 def get_config(ctx, name):
     """Get ssh config with name"""
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     if not config.exists(name):
-        click.secho(f"No host found, {name}", fg='red')
+        click.secho(f"No host found, {name}", fg="red")
         raise SystemExit()
     selected = config.get(name)
     click.echo(selected)
 
 
-@cli.command('add')
-@click.argument('name')
+@cli.command("add")
+@click.argument("name")
 @click.pass_context
 def add_config(ctx, name):
     """Add SSH Config into config file"""
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     if config.exists(name):
-        click.secho(f"{name} already exists, use `update` instead of `add`", fg='red')
+        click.secho(f"{name} already exists, use `update` instead of `add`", fg="red")
         raise SystemExit
-    hostname = click.prompt('HostName')
-    user = click.prompt('User', default=os.getenv('USER'), show_default=True)
-    port = click.prompt('Port', type=int, default=22, show_default=True)
+    hostname = click.prompt("HostName")
+    user = click.prompt("User", default=os.getenv("USER"), show_default=True)
+    port = click.prompt("Port", type=int, default=22, show_default=True)
     attrs = {
-        'HostName': hostname,
-        'User': user,
-        'Port': port,
+        "HostName": hostname,
+        "User": user,
+        "Port": port,
     }
     host = Host(name, attrs)
     config.add(host)
@@ -188,21 +200,21 @@ def add_config(ctx, name):
     write_config(config, "Information is correct ?", "Added!")
 
 
-@cli.command('update')
-@click.argument('name')
+@cli.command("update")
+@click.argument("name")
 @click.argument("attributes", nargs=-1, metavar="<key=value>")
 @click.pass_context
 def update_config(ctx, name, attributes):
     """Update the ssh Host config Attribute key=value format"""
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
 
     if not config.exists(name):
-        click.secho(f"{name} does not exist, use `update` instead of `add`", fg='red')
+        click.secho(f"{name} does not exist, use `update` instead of `add`", fg="red")
         raise SystemExit
 
     host = config.get(name)
     click.echo(host)
-    click.echo("="*25)
+    click.echo("=" * 25)
     for attribute in attributes:
         try:
             key, value = attribute.split("=")
@@ -213,42 +225,42 @@ def update_config(ctx, name, attributes):
             else:
                 raise Exception(f"No exists Attribute: {key}")
         except Exception as e:
-            click.secho(f"Wrong format of attribute, {e}", fg='red')
+            click.secho(f"Wrong format of attribute, {e}", fg="red")
             raise SystemExit
         click.echo(host)
 
     write_config(config, "Information is correct ?", "Updated!")
 
 
-@cli.command('rename')
-@click.argument('name')
-@click.argument('new_name')
+@cli.command("rename")
+@click.argument("name")
+@click.argument("new_name")
 @click.pass_context
 def rename_config(ctx, name, new_name):
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
 
     if not config.exists(name):
-        click.secho(f"{name} does not exist", fg='red')
+        click.secho(f"{name} does not exist", fg="red")
         raise SystemExit
     config.get(name).set_name(new_name)
     click.echo(config.get(new_name))
     write_config(config, "Information is correct ?", "Renamed!")
 
 
-@cli.command('remove')
-@click.argument('name')
+@cli.command("remove")
+@click.argument("name")
 @click.pass_context
 def remove_config(ctx, name):
-    config = ctx.obj['config']
+    config = ctx.obj["config"]
     if not config.exists(name):
-        click.secho(f"{name} does not exist", fg='red')
+        click.secho(f"{name} does not exist", fg="red")
         raise SystemExit
     click.echo(config.get(name))
     config.remove(name)
     write_config(config, "Do you want to remove ?", "Removed!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """ssh-config {version}
 
     Usage:

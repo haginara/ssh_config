@@ -63,14 +63,19 @@ def ssh_format_print():
 def field_print(fields):
     while True:
         host = yield
-        row = ",".join([getattr(host, field) for field in fields.split(",") if getattr(host, field)])
+        row = ",".join(
+            [
+                getattr(host, field)
+                for field in fields.split(",")
+                if getattr(host, field)
+            ]
+        )
         print(row)
 
 
 @coroutine
 def table_print(verbose=False):
-    """Print Table
-    """
+    """Print Table"""
     table = Texttable(max_width=100)
     table.set_deco(Texttable.HEADER)
     header = ["Host", "HostName", "User", "Port", "IdentityFile"]
