@@ -264,7 +264,7 @@ def remove_config(ctx, name):
     write_config(config, "Do you want to remove ?", "Removed!")
 
 
-if __name__ == "__main__":
+def main():
     """ssh-config {version}
 
     Usage:
@@ -295,3 +295,7 @@ if __name__ == "__main__":
     except SystemExit as e:
         if e.code != 0:
             raise
+
+
+if __name__ == "__main__":
+    main()
