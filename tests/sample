@@ -1,11 +1,13 @@
+CanonicalizeHostname no
+CanonicalDomains no
 Host server1
     HostName 203.0.113.76
     ServerAliveInterval 200
 Host *
     ServerAliveInterval 40
 Host server_cmd_1
-    HostName 203.0.113.76
-    Port 2202
+HostName 203.0.113.76
+Port 2202
 host server_cmd_2
     HostName 203.0.113.76
     Port 22
