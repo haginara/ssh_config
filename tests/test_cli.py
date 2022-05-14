@@ -51,13 +51,13 @@ def test_list_config():
     runner = CliRunner()
     result = runner.invoke(cli.cli,
         ['-f', sample, 'ls'])
-    output = "\n".join([
-        "*", "host_1 host_2", "server1",
+    output = ["*", "host_1 host_2", "server1",
         "server_cmd_1", "server_cmd_2",
-        "server_cmd_3", ""])
+        "server_cmd_3"]
     print(result.output)
     assert result.exit_code == 0
-    assert result.output == output
+    for config in output:
+        assert config in result.output
 
 
 def test_get_config():
