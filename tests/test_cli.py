@@ -76,7 +76,7 @@ def test_get_config():
 
 def test_add_config():
     """Test add ssh host to config"""
-    inputs = ["1.1.1.1", "jonghak.choi", "22", "", "Y"]
+    inputs = ["1.1.1.1", "jonghak.choi", "22", "", "N", "Y"]
     sample_add = f"{os.path.dirname(sample)}/sample.add"
     shutil.copy(sample, sample_add)
     runner = CliRunner()

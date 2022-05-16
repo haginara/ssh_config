@@ -5,7 +5,7 @@ import os
 import re
 import logging
 
-HOST_START = re.compile(r'^(host|match)[ =](?P<name>.*)', re.IGNORECASE)
+HOST_START = re.compile(r"^(host|match)[ =](?P<name>.*)", re.IGNORECASE)
 
 
 logger = logging.getLogger("ssh_config.client")
@@ -13,43 +13,46 @@ logger = logging.getLogger("ssh_config.client")
 
 class EmptySSHConfig(Exception):
     """Exception"""
+
     def __init__(self, path):
         super().__init__("Empty SSH Config: %s" % path)
 
 
 class WrongSSHConfig(Exception):
     """Exception"""
+
     def __init__(self, path):
         super().__init__("Wrong SSH Config: %s" % path)
 
 
 class HostExistsError(Exception):
     """Exception"""
+
     def __init__(self, name):
         super().__init__(f"Host already exists, {name}")
 
 
 def is_skip(line):
     """Check the lins can be skipped"""
-    if line == '':
+    if line == "":
         return True
-    if line[0] == '#':
+    if line[0] == "#":
         return True
     return False
 
 
 def remove_comment(line):
     """Remove the comment on the line"""
-    if line.find('#') != -1:
-        line = line[:line.find('#')]
+    if line.find("#") != -1:
+        line = line[: line.find("#")]
     return line
 
 
 def get_attribute(line):
     """Get attribute from the line"""
-    delim = ' '
-    if '=' in line:
-        delim = '='
+    delim = " "
+    if "=" in line:
+        delim = "="
     try:
         key, value = line.split(delim, 1)
     except ValueError as error:
@@ -84,13 +87,13 @@ def parse_config(data: str) -> Tuple[List, Dict]:
         if match:
             if host:
                 hosts.append(host)
-            name = match.group('name')
-            host = {'host': name, 'attrs': {}}
+            name = match.group("name")
+            host = {"host": name, "attrs": {}}
             continue
         # Parsing Attributes
         key, value = get_attribute(line)
         if host:
-            host['attrs'][key] = value
+            host["attrs"][key] = value
         else:
             global_options[key] = value
     if host:
@@ -116,15 +119,16 @@ def read_config(path: str) -> Tuple[List, Dict]:
 
 def test_read_config():
     """Test for read_config."""
-    hosts, global_attrs = read_config('../tests/sample')
+    hosts, global_attrs = read_config("../tests/sample")
     for host in hosts:
         print(host)
     assert len(hosts) == 6
-    assert global_attrs['CanonicalizeHostname'] == 'no'
+    assert global_attrs["CanonicalizeHostname"] == "no"
 
 
 class Host:
     """Host object contains information of Host"""
+
     attrs = [
         ("HostName", str),
         ("User", str),
@@ -272,6 +276,7 @@ class Host:
 
 class SSHConfig:
     """ssh_config file."""
+
     __slots__ = ["hosts", "raw", "config_path", "global_options"]
 
     def __init__(self, path=None):
@@ -318,7 +323,7 @@ class SSHConfig:
         """Load the ssh_config file into `hosts` with config_path"""
         hosts, global_options = read_config(self.config_path)
         for host in hosts:
-            self.hosts.append(Host(host['host'], host['attrs']))
+            self.hosts.append(Host(host["host"], host["attrs"]))
         self.global_options = global_options
 
     def update(self, name: str, attrs: Dict):

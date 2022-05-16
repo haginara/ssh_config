@@ -25,37 +25,30 @@ Python 3.6 or higher
 Installation
 ------------
 ```
-$ pip install ssh-config
+pip3 install ssh-config
 ```
 
 Usage
 -----
 ```
-ssh-config <version>
+Usage: ssh-config [OPTIONS] COMMAND [ARGS]...
 
-   Usage:
-       ssh-config [options] <command> [<args>...]
+Options:
+  -f, --path TEXT       [default: /Users/jonghak.choi/.ssh/config]
+  --debug / --no-debug
+  --version             Show the version and exit.
+  --help                Show this message and exit.
 
-   Options:
-       -h --help           Show this screen.
-       -v --version        Show version.
-       -V --verbose        Verbose output
-       -f --config FILE    Specify an ssh client file [default: ~/.ssh/config]
-
-   Commands:
-       gen         Generate ssh config file
-       ls          Show list of Hosts in client file
-       get         Get ssh client config with Name
-       add         Add new Host configuration
-       update      Update host configuration
-       rename      Update host configuration
-       rm          Remove exist Host configuration
-       import      Import Hosts from csv file to SSH Client config
-       export      Export Hosts to csv/ansible format
-       bastion     Bastion register/use
-       ping        Send ping to selected host
-       version     Show version information
-
+Commands:
+  add         Add SSH Config into config file
+  attributes  Print possible attributes for Host
+  gen         Generate the ssh config
+  get         Get ssh config with name
+  ls          Enumerate the configs
+  remove
+  rename
+  ssh         Interative shell for Host
+  update      Update the ssh Host config Attribute key=value format
 ```
 
 Use-cases
@@ -64,12 +57,16 @@ Use-cases
 #### List hosts
 ```
 $ ssh-config ls
-# It shows name and HostName attribute
-server1: 203.0.113.76
-*: None
-server_cmd_1: 203.0.113.76
-server_cmd_2: 203.0.113.76
-server_cmd_3: 203.0.113.76
+server1
+server_cmd_1
+server_cmd_2
+server_cmd_3
+
+$ ssh-config ls -l
+server1			10.0.2.10
+server_cmd_1	10.0.1.11
+server_cmd_2	10.0.1.12
+server_cmd_3	10.0.1.13
 ```
 
 ##### Add host
@@ -79,43 +76,23 @@ $ ssh-config add "server_cmd_4" HostName=203.0.113.77 IdentityFile="~/.ssh/cmd_i
 
 ##### Update host
 ```
-$ ssh-config add --update -p "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
+$ ssh-config update "server_cmd_3" IdentityFile="~/.ssh/cmd_id_rsa"
 ```
 
 ##### Remove host
 ```
-$ ssh-config rm "server_3"
+$ ssh-config remove "server_3"
 ```
 
 ### Using pattern to get list or update exist hosts
 
-##### List hosts with pattern
-```
-$ ssh-config ls "server_*"
-# It shows name and HostName attribute
-server_cmd_1: 203.0.113.76
-server_cmd_2: 203.0.113.76
-server_cmd_3: 203.0.113.76
-```
-
-##### Update hosts with pattern
-```
-$ ssh-config add --update -p "server_*" IdentityFile="~/.ssh/cmd_id_rsa"
-```
-
-
 #### add ssh key to multiple servers
 ```
-ssh-config ls --only-name | xargs -I{} ssh-copy-id -i ~/.ssh/id_rsa {}
+ssh-config ls | xargs -I{} ssh-copy-id -i ~/.ssh/id_rsa {}
 ```
 
 ### Export ssh-config to ansible inventory ini format.
+https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html?extIdCarryOver=true&sc_cid=701f2000001OH7EAAW#inventory-script-conventions
 ```
-ssh-config export ansible -g linux
-
-[linux]
-server1              ansible_host=203.0.113.76       
-server_cmd_1         ansible_host=203.0.113.76       
-server_cmd_2         ansible_host=203.0.113.76         ansible_user=user     
-server_cmd_3         ansible_host=203.0.113.76         ansible_user=user     
+ssh-config inventory --list|--host <hostname>
 ```
