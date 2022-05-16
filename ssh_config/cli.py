@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import
 import os
 import stat
+import json
 import getpass
 
 import socket
@@ -68,7 +69,9 @@ def posix_shell(chan):
 
 
 @click.group()
-@click.option("-f", "--path", default=os.path.expanduser("~/.ssh/config"), show_default=True)
+@click.option(
+    "-f", "--path", default=os.path.expanduser("~/.ssh/config"), show_default=True
+)
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(__version__)
 @click.pass_context
@@ -80,7 +83,7 @@ def cli(ctx, path, debug):
     if os.path.exists(path):
         ctx.obj["config"] = get_sshconfig(path)
     else:
-        if ctx.invoked_subcommand != 'gen':
+        if ctx.invoked_subcommand != "gen":
             raise SystemExit(f"SSH config does not exists, {path}")
 
 
@@ -183,21 +186,41 @@ def get_config(ctx, name):
 
 @cli.command("add")
 @click.argument("name")
+@click.argument("attributes", metavar="<Attribute=Value>", nargs=-1)
 @click.pass_context
-def add_config(ctx, name):
+def add_config(ctx, name, attributes):
     """Add SSH Config into config file"""
     config = ctx.obj["config"]
     if config.exists(name):
         click.secho(f"{name} already exists, use `update` instead of `add`", fg="red")
         raise SystemExit
-    hostname = click.prompt("HostName")
-    user = click.prompt("User", default=os.getenv("USER"), show_default=True)
-    port = click.prompt("Port", type=int, default=22, show_default=True)
-    attrs = {
-        "HostName": hostname,
-        "User": user,
-        "Port": port,
-    }
+    attrs = {}
+    for attribute in attributes:
+        try:
+            # TODO: Check validation
+            attribute, value = attribute.split("=")
+            attrs[attribute] = value
+        except Exception:
+            raise AttributeError("attribute format is <Attribute=Value>")
+
+    # Ask the essential attributes
+    if 'HostName' not in attrs:
+        attrs['HostName'] = click.prompt("HostName")
+    if 'User' not in attrs:
+        attrs['User'] = click.prompt("User", default=os.getenv("USER"), show_default=True)
+    attrs['Port'] = int(attrs.get("Port")) or click.prompt("Port",
+                                                           type=int, default=22, show_default=True)
+    if 'IdentityFile' not in attrs:
+        attrs['IdentityFile'] = click.prompt("IdentityFile",
+                                             type=str, default="~/.ssh/id_rsa",
+                                             show_default=True)
+    if not attributes:
+        while click.confirm("Do you have additonal attribute?"):
+            # TODO: Check validation
+            attribute = click.prompt("Attribute: ")
+            value = click.prompt("Value: ")
+            attrs[attribute] = value
+
     host = Host(name, attrs)
     config.add(host)
     click.echo(host)
@@ -262,6 +285,40 @@ def remove_config(ctx, name):
     click.echo(config.get(name))
     config.remove(name)
     write_config(config, "Do you want to remove ?", "Removed!")
+
+
+@cli.command("inventory")
+@click.option("--list", "-l", "list_", is_flag=True)
+@click.option("--host")
+@click.pass_context
+def inventory(ctx, list_, host):
+    """Ansible inventory plugin"""
+    config = ctx.obj["config"]
+    if list_:
+        inventory_data = {
+            "_meta": {"hostvars": {}},
+            "all": {"children": ["ungrouped"]},
+            "ungrouped": {"hosts": []},
+        }
+        for host in config:
+            hostvars = {
+                "ansible_host": host.HostName,
+                "ansible_port": host.Port or 22,
+                "ansible_ssh_user": host.User or os.getenv("USER"),
+            }
+            if host.IdentityFile:
+                hostvars["ansible_ssh_private_key_file"] = host.IdentityFile
+            inventory_data["_meta"]["hostvars"][host.name] = hostvars
+            inventory_data["ungrouped"]["hosts"].append(host.name)
+        click.echo(json.dumps(inventory_data, indent=2))
+    elif host:
+        host = config.get(host)
+        hostvars = {
+            "ansible_host": host.HostName,
+            "ansible_port": host.Port or 22,
+            "ansible_ssh_user": host.User or os.getenv("USER"),
+        }
+        click.echo(json.dumps(hostvars, indent=2))
 
 
 def main():
