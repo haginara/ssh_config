@@ -199,6 +199,8 @@ def add_config(ctx, name, attributes):
         try:
             # TODO: Check validation
             attribute, value = attribute.split("=")
+            if attribute == 'Port':
+                value = int(value)
             attrs[attribute] = value
         except Exception:
             raise AttributeError("attribute format is <Attribute=Value>")
@@ -208,8 +210,8 @@ def add_config(ctx, name, attributes):
         attrs['HostName'] = click.prompt("HostName")
     if 'User' not in attrs:
         attrs['User'] = click.prompt("User", default=os.getenv("USER"), show_default=True)
-    attrs['Port'] = int(attrs.get("Port")) or click.prompt("Port",
-                                                           type=int, default=22, show_default=True)
+    attrs['Port'] = attrs.get("Port") or click.prompt("Port",
+                                                      type=int, default=22, show_default=True)
     if 'IdentityFile' not in attrs:
         attrs['IdentityFile'] = click.prompt("IdentityFile",
                                              type=str, default="~/.ssh/id_rsa",
