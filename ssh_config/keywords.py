@@ -1,3 +1,24 @@
+
+def yes_or_no(value: str) -> bool:
+    """Convert 'yes' or 'no' to True or False
+    Args:
+        value (str): The string containing 'yes' or 'no'
+    Returns:
+        bool: True if value is 'yes', False if value is 'no'
+    """
+    if value is None:
+        return
+    if value.lower() not in ('yes', 'no'):
+        raise TypeError("Yes or No is required")
+    convert = {
+        "yes": True,
+        "no": False,
+        True: "yes",
+        False: "no",
+    }
+    return convert[value]
+
+
 Keywords = [
     ("HostName", str),
     ("User", str),
@@ -46,4 +67,56 @@ Keywords = [
     ("ServerAliveCountMax", int),
     ("UsePrivilegedPort", str),  # yes, no
     ("TCPKeepAlive", str),  # yes, no
+    ("Include", str),
+    ("IPQoS", str),
+    ("GlobalKnownHostsFile", str),
+    ("UserKnownHostsFile", str),
+    ("GSSAPIDelegateCredentials", str),
+    ("PKCS11Provider", str),
+    ("XAuthLocation", str),
+    ("PasswordAuthentication", yes_or_no),  # default: yes
+    ("KbdInteractiveAuthentication", str),
+    ("KbdInteractiveDevices", str),
+    ("PubkeyAuthentication", str),
+    ("HostbasedAuthentication", str),
+    ("IdentitiesOnly", yes_or_no),  # default: no
+    ("CertificateFile", str),
+    ("HostKeyAlias", str),
+    ("MACs", str),
+    ("RemoteForward", str),
+    ("PermitRemoteOpen", str),
+    ("StrictHostKeyChecking", yes_or_no),
+    ("NumberOfPasswordPrompts", str),
+    ("SyslogFacility", str),
+    ("LogVerbose", str),
+    ("HostKeyAlgorithms", str),
+    ("CASignatureAlgorithms", str),
+    ("VerifyHostKeyDNS", str),
+    ("NoHostAuthenticationForLocalhost", str),
+    ("RekeyLimit", str),
+    ("SendEnv", str),
+    ("SetEnv", str),
+    ("ControlPersist", str),
+    ("HashKnownHosts", str),
+    ("Tunnel", str),
+    ("TunnelDevice", str),
+    ("PermitLocalCommand", str),
+    ("RemoteCommand", str),
+    ("VisualHostKey", str),
+    ("KexAlgorithms", str),
+    ("RequestTTY", str),
+    ("SessionType", str),
+    ("StdinNull", str),
+    ("ForkAfterAuthentication", str),
+    ("ProxyUseFdpass", str),
+    ("StreamLocalBindMask", str),
+    ("StreamLocalBindUnlink", str),
+    ("RevokedHostKeys", str),
+    ("FingerprintHash", str),  # md5 or sha256
+    ("UpdateHostKeys", str),
+    ("HostbasedAcceptedAlgorithms", str),
+    ("PubkeyAcceptedAlgorithms", str),
+    ("IgnoreUnknown", str),
+    ("SecurityKeyProvider", str),
+    ("KnownHostsCommand", str),
 ]
