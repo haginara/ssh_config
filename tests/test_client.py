@@ -11,7 +11,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ssh_config import SSHConfig, Host
-from ssh_config.client import EmptySSHConfig, WrongSSHConfig, HostExistsError
+from ssh_config.errors import EmptySSHConfig, WrongSSHConfig, HostExistsError
 
 logging.basicConfig(level=logging.INFO)
 sample = os.path.join(os.path.dirname(__file__), "sample")

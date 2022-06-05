@@ -1,5 +1,7 @@
 """SSH Config client
 """
+from ssh_config.errors import HostExistsError
+from ssh_config.keywords import Keywords
 from typing import List, Dict, Tuple
 import os
 import re
@@ -9,27 +11,6 @@ HOST_START = re.compile(r"^(host|match)[ =](?P<name>.*)", re.IGNORECASE)
 
 
 logger = logging.getLogger("ssh_config.client")
-
-
-class EmptySSHConfig(Exception):
-    """Exception"""
-
-    def __init__(self, path):
-        super().__init__("Empty SSH Config: %s" % path)
-
-
-class WrongSSHConfig(Exception):
-    """Exception"""
-
-    def __init__(self, path):
-        super().__init__("Wrong SSH Config: %s" % path)
-
-
-class HostExistsError(Exception):
-    """Exception"""
-
-    def __init__(self, name):
-        super().__init__(f"Host already exists, {name}")
 
 
 def is_skip(line):
@@ -129,61 +110,11 @@ def test_read_config():
 class Host:
     """Host object contains information of Host"""
 
-    attrs = [
-        ("HostName", str),
-        ("User", str),
-        ("Port", int),
-        ("IdentityFile", str),
-        ("AddressFamily", str),  # any, inet, inet6
-        ("BatchMode", str),
-        ("BindAddress", str),
-        ("ChallengeResponseAuthentication", str),  # yes, no
-        ("CheckHostIP", str),  # yes, no
-        ("Cipher", str),
-        ("Ciphers", str),
-        ("ClearAllForwardings", str),  # yes, no
-        ("Compression", str),  # yes, no
-        ("CompressionLevel", int),  # 1 to 9
-        ("ConnectionAttempts", int),  # default: 1
-        ("ConnectTimeout", int),
-        ("ControlMaster", str),  # yes, no
-        ("ControlPath", str),
-        ("DynamicForward", str),  # [bind_address:]port, [bind_adderss/]port
-        ("EnableSSHKeysign", str),  # yes, no
-        ("EscapeChar", str),  # default: '~'
-        ("ExitOnForwardFailure", str),  # yes, no
-        ("ForwardAgent", str),  # yes, no
-        ("ForwardX11", str),  # yes, no
-        ("ForwardX11Trusted", str),  # yes, no
-        ("GatewayPorts", str),  # yes, no
-        ("GlobalKnownHostsFile", str),  # yes, no
-        ("GSSAPIAuthentication", str),  # yes, no
-        ("LocalCommand", str),
-        ("LocalForward", str),
-        ("LogLevel", str),
-        ("ProxyCommand", str),
-        ("ProxyJump", str),
-        ("Match", str),
-        ("AddKeysToAgent", str),
-        ("BindInterface", str),
-        ("CanonicalizeHostname", str),  # yes, no
-        ("CanonicalizeMaxDots", int),
-        ("CanonicalDomains", str),
-        ("CanonicalizePermittedCNAMEs", str),
-        ("CanonicalizeFallbackLocal", str),
-        ("IdentityAgent", str),
-        ("PreferredAuthentications", str),
-        ("ServerAliveInterval", int),
-        ("ServerAliveCountMax", int),
-        ("UsePrivilegedPort", str),  # yes, no
-        ("TCPKeepAlive", str),  # yes, no
-    ]
-
     def __init__(self, name, attrs):
         self.set_name(name)
-        self.__attrs = dict()
+        self.__attrs = {}
         attrs = {key.upper(): value for key, value in attrs.items()}
-        for attr, attr_type in self.attrs:
+        for attr, attr_type in Keywords:
             if attrs.get(attr.upper()):
                 self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
 

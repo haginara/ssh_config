@@ -1,3 +1,3 @@
-from .client import SSHConfig, Host, EmptySSHConfig
+from .client import SSHConfig, Host
 
-__all__ = ["EmptySSHConfig", "SSHConfig", "Host"]
+__all__ = ["SSHConfig", "Host"]
