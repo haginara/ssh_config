@@ -21,8 +21,9 @@ except ImportError:
 import click
 
 from ssh_config.client import Host
-from .client import SSHConfig
-from .version import __version__
+from ssh_config.client import SSHConfig
+from ssh_config.keywords import Keywords
+from ssh_config.version import __version__
 
 
 def get_sshconfig(configpath, create=True):
@@ -90,7 +91,7 @@ def cli(ctx, path, debug):
 @cli.command("attributes")
 def get_attributes():
     """Print possible attributes for Host"""
-    for attr, attr_type in Host.attrs:
+    for attr, attr_type in Keywords:
         click.echo(f"{attr}")
 
 
