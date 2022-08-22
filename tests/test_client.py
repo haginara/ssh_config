@@ -16,11 +16,12 @@ from ssh_config.errors import EmptySSHConfig, WrongSSHConfig, HostExistsError
 logging.basicConfig(level=logging.INFO)
 sample = os.path.join(os.path.dirname(__file__), "sample")
 
-new_host = Host("server2", {"ServerAliveInterval": 200, "HostName": "203.0.113.77"})
+new_host = Host("server2", {"ServerAliveInterval": 200, "HostName": "203.0.113.77", "StrictHostKeyChecking": "no"})
 
 new_data = """Host server2
     HostName 203.0.113.77
     ServerAliveInterval 200
+    StrictHostKeyChecking no
 """
 
 
