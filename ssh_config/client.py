@@ -167,7 +167,7 @@ class Host:
                     self.get(keyword.key))
         return converted_attributes
 
-    @ property
+    @property
     def name(self):
         """Return name"""
         return " ".join(self.__name)
@@ -244,7 +244,7 @@ class SSHConfig:
     def __getitem__(self, name):
         return self.get(name)
 
-    @ classmethod
+    @classmethod
     def create(cls, config_path: str):
         """Load ssh-config file with path
         Args:

@@ -33,7 +33,7 @@ class Keyword:
                  persist_converter: type = None) -> None:
         self.key = key
         self.type_converter = type_converter
-        self.persist_convert = persist_converter if persist_converter else type_converter
+        self.persist_converter = persist_converter if persist_converter else type_converter
 
 
 Keywords = [
