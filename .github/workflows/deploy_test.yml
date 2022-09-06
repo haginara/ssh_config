@@ -2,9 +2,7 @@ name: Upload ssh-config to test.pypi
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
