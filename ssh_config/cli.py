@@ -91,8 +91,8 @@ def cli(ctx, path, debug):
 @cli.command("attributes")
 def get_attributes():
     """Print possible attributes for Host"""
-    for attr, attr_type in Keywords:
-        click.echo(f"{attr}")
+    for keyword in Keywords:
+        click.echo(f"{keyword.key}")
 
 
 @cli.command("ssh")

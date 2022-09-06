@@ -114,9 +114,10 @@ class Host:
         self.set_name(name)
         self.__attrs = {}
         attrs = {key.upper(): value for key, value in attrs.items()}
-        for attr, attr_type in Keywords:
-            if attrs.get(attr.upper()):
-                self.__attrs[attr] = attr_type(attrs.get(attr.upper()))
+        for keyword in Keywords:
+            if attrs.get(keyword.key.upper()):
+                self.__attrs[keyword.key] = keyword.type_converter(
+                    attrs.get(keyword.key.upper()))
 
     def set_name(self, name):
         """Set Host name
@@ -146,7 +147,7 @@ class Host:
         """Get attributes
         Args:
             exclude (List or None): Attributes to exclude
-            include (List or None): Atrributes to include
+            include (List or None): Attributes to include
         """
         if exclude and include:
             raise Exception("exclude and include cannot be together")
@@ -157,6 +158,14 @@ class Host:
         if include:
             return {key: self.__attrs[key] for key in self.__attrs if key in include}
         return self.__attrs
+
+    def persist_attributes(self):
+        converted_attributes = {}
+        for keyword in Keywords:
+            if keyword.key in self.attributes():
+                converted_attributes[keyword.key] = keyword.persist_converter(
+                    self.get(keyword.key))
+        return converted_attributes
 
     @property
     def name(self):
@@ -329,7 +338,7 @@ class SSHConfig:
 
     def write(self, filename=None):
         """Write the current ssh_config to self.config_path or given filename
-        It chagnes the self.config_path, if the filename is given.
+        It changes the self.config_path, if the filename is given.
         Args:
             filename (str): target filename to be written.
         """
@@ -339,8 +348,8 @@ class SSHConfig:
         with open(self.config_path, "w") as f:
             for host in self.hosts:
                 f.write(f"Host {host.name}\n")
-                for attr in host.attributes():
-                    f.write(f"{' '*4}{attr} {host.get(attr)}\n")
+                for attr, value in host.persist_attributes().items():
+                    f.write(f"{' '*4}{attr} {value}\n")
 
     def asdict(self):
         """Return dict from list of hosts
