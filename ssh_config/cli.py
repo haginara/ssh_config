@@ -248,9 +248,10 @@ def update_config(ctx, name, attributes):
     for attribute in attributes:
         try:
             key, value = attribute.split("=")
-            for attr, _ in Host.attrs:
-                if attr.lower() == key.lower():
-                    config.update(name, {attr: value})
+            for keyword in Keywords:
+                # validate the attribute
+                if keyword.key.lower() == key.lower():
+                    config.update(name, {keyword.key: value})
                     break
             else:
                 raise Exception(f"No exists Attribute: {key}")
