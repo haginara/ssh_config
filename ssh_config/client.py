@@ -304,7 +304,7 @@ class SSHConfig:
             return False
         return True
 
-    def get(self, name: str):
+    def get(self, name: str) -> Host:
         """Get Host with name
         Args:
             name (str): host name

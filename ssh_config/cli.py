@@ -189,7 +189,7 @@ def get_config(ctx, name):
 @click.argument("name")
 @click.argument("attributes", metavar="<Attribute=Value>", nargs=-1)
 @click.pass_context
-def add_config(ctx, name, attributes):
+def add_config(ctx, name: str, attributes: list[str]):
     """Add SSH Config into config file"""
     config = ctx.obj["config"]
     if config.exists(name):
@@ -234,7 +234,7 @@ def add_config(ctx, name, attributes):
 @click.argument("name")
 @click.argument("attributes", nargs=-1, metavar="<key=value>")
 @click.pass_context
-def update_config(ctx, name, attributes):
+def update_config(ctx, name: str, attributes: list[str]):
     """Update the ssh Host config Attribute key=value format"""
     config = ctx.obj["config"]
 
@@ -242,13 +242,14 @@ def update_config(ctx, name, attributes):
         click.secho(f"{name} does not exist, use `update` instead of `add`", fg="red")
         raise SystemExit
 
-    host = config.get(name)
+    host: Host = config.get(name)
+    print(type(host))
     click.echo(host)
     click.echo("=" * 25)
     for attribute in attributes:
         try:
             key, value = attribute.split("=")
-            for attr, _ in Host.attrs:
+            for attr in host.attributes():
                 if attr.lower() == key.lower():
                     config.update(name, {attr: value})
                     break
