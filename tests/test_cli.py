@@ -5,12 +5,9 @@ from click.testing import CliRunner
 import os
 import shutil
 import sys
-import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from ssh_config.version import __version__
 from ssh_config import cli
-from ssh_config import SSHConfig
 
 
 sample = os.path.join(os.path.dirname(__file__), "sample")
