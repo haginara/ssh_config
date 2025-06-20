@@ -1,0 +1,26 @@
+[project]
+name = "ssh-config"
+version = "0.0.1"
+requires-python = "~=3.9"
+dependencies = [
+    "pyparsing",
+    "texttable",
+    "Jinja2",
+    "click",
+    "paramiko",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "flake8",
+    "black==21.6b0",
+    "coverage",
+]
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
