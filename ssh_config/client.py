@@ -32,7 +32,7 @@ def remove_comment(line):
 def get_attribute(line):
     """Get attribute from the line"""
     delim = " "
-    if "=" in line:
+    if " " not in line and "=" in line:
         delim = "="
     try:
         key, value = line.split(delim, 1)
