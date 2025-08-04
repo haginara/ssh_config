@@ -1,0 +1,47 @@
+[project]
+name = "ssh-config"
+dynamic = ["version"]
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = "~=3.10"
+dependencies = [
+    "pyparsing",
+    "texttable",
+    "Jinja2",
+    "click",
+    "paramiko",
+]
+
+[project.scripts]
+ssh-config = "ssh_config.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "flake8",
+    "black==21.6b0",
+    "coverage",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.0",
+]
+
+[tool.uv]
+package = true
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[tool.pytest.ini_options]
+addopts = "--cov ssh_config --cov-report=term-missing"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = []
+ignore = ["E7", "F8"]

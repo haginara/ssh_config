@@ -160,7 +160,7 @@ def gen_config(ctx):
 @cli.command("ls")
 @click.option("-l", is_flag=True, help="More detail")
 @click.pass_context
-def list_config(ctx, l):
+def list_config(ctx, l: bool):
     """Enumerate the configs"""
     config = ctx.obj["config"]
     for host in config:
