@@ -4,7 +4,7 @@ dynamic = ["version"]
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = "~=3.9"
+requires-python = "~=3.10"
 dependencies = [
     "pyparsing",
     "texttable",
@@ -35,3 +35,13 @@ url = "https://pypi.org/simple"
 
 [tool.pytest.ini_options]
 addopts = "--cov ssh_config --cov-report=term-missing"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = []
+ignore = ["E7", "F8"]
