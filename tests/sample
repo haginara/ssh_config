@@ -5,6 +5,7 @@ Host server1
     ServerAliveInterval 200
 Host *
     ServerAliveInterval 40
+    SetEnv TERM=xterm-256color
 Host server_cmd_1
 HostName 203.0.113.76
 Port 2202
