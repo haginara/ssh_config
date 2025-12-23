@@ -68,6 +68,22 @@ def posix_shell(chan):
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
+def get_identity_files(path: str = "~/.ssh"):
+    fullpath = os.path.expanduser(path)
+    keys = []
+    for file in os.listdir(fullpath):
+        # if not ends with .pub and starts with id_
+        if file.startswith("id_") and not file.endswith(".pub") and os.path.isfile(os.path.join(fullpath, file)):
+            keys.append(os.path.join(path, file))
+    if len(keys) == 0:
+        # keys not found, return default key
+        click.echo(f"[Warning] identity file not found, using default")
+        return os.path.join(path, "id_rsa")
+    elif len(keys) == 1:
+        return keys[0]
+    else:
+        print(f"[Warning] multiple identity files found: {keys}")
+        return keys[0]
 
 @click.group()
 @click.option(
@@ -215,7 +231,7 @@ def add_config(ctx, name: str, attributes: list[str]):
                                                       type=int, default=22, show_default=True)
     if 'IdentityFile' not in attrs:
         attrs['IdentityFile'] = click.prompt("IdentityFile",
-                                             type=str, default="~/.ssh/id_rsa",
+                                             type=str, default=get_identity_files(),
                                              show_default=True)
     if not attributes:
         while click.confirm("Do you have additonal attribute?"):
