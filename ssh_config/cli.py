@@ -77,7 +77,7 @@ def get_identity_files(path: str = "~/.ssh"):
             keys.append(os.path.join(path, file))
     if len(keys) == 0:
         # keys not found, return default key
-        print(f"[Warning] identity file not found, using default")
+        click.echo(f"[Warning] identity file not found, using default")
         return os.path.join(path, "id_rsa")
     elif len(keys) == 1:
         return keys[0]
